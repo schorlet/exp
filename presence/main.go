@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
@@ -17,8 +18,8 @@ import (
 var (
 	// 3-legged OAuth2 flow
 	conf = &oauth2.Config{
-		ClientID:     "YOUR_CLIENT_ID",
-		ClientSecret: "YOUR_CLIENT_SECRET",
+		ClientID:     os.Getenv("GITHUB_CLIENT_ID"),
+		ClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
 		RedirectURL:  "http://127.0.0.1:8000/callback",
 		Scopes:       []string{"user:email"},
 		Endpoint:     github.Endpoint,
