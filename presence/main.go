@@ -2,11 +2,8 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -24,43 +21,52 @@ var (
 		Scopes:       []string{"user:email"},
 		Endpoint:     github.Endpoint,
 	}
-	confState = randomString(20)
 )
 
-// randomString
-func randomString(length int) string {
-	raw := make([]byte, length)
-	if _, err := io.ReadFull(rand.Reader, raw); err != nil {
-		log.Fatalf("randomString: read failed: %v\n", err)
-	}
-	str := base64.RawURLEncoding.EncodeToString(raw)
-	return str[:length]
-}
+const loginPage = `<html>
+	<body>Log in with <a href="/login">GitHub</a></body>
+</html>`
 
 const indexPage = `<html>
-	<body>Log in with <a href="/login">GitHub</a></body>
+	<body>Logged as %q</body>
 </html>`
 
 // index
 func index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if _, err := fmt.Fprintf(w, indexPage); err != nil {
-		log.Printf("index: write response: %v\n", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	session, ok := getSession(r)
+	if ok {
+		fmt.Fprintf(w, indexPage, session.Login)
+		return
 	}
+	fmt.Fprintf(w, loginPage)
 }
 
 // login
 func login(w http.ResponseWriter, r *http.Request) {
-	url := conf.AuthCodeURL(confState, oauth2.AccessTypeOnline)
+	session, ok := getSession(r)
+	if ok {
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
+	session.setCookie(w)
+
+	url := conf.AuthCodeURL(session.state, oauth2.AccessTypeOnline)
 	fmt.Printf("login: url: %s\n", url)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
 // callback
 func callback(w http.ResponseWriter, r *http.Request) {
+	session, ok := getSession(r)
+	if ok {
+		log.Printf("callback: user already logged\n")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
+
 	state := r.FormValue("state")
-	if state != confState {
+	if state != session.state {
 		log.Printf("callback: invalid state: %q\n", state)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
@@ -97,29 +103,30 @@ func callback(w http.ResponseWriter, r *http.Request) {
 	}
 	defer res.Body.Close()
 
-	user := struct {
-		Login     string `json:"login"`
-		Name      string `json:"name"`
-		Email     string `json:"email"`
-		AvatarURL string `json:"avatar_url"`
-	}{}
 	dec := json.NewDecoder(res.Body)
-	if err = dec.Decode(&user); err != nil {
+	if err = dec.Decode(&session); err != nil {
 		log.Printf("callback: decode user failed: %v\n", err)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
+	session.save()
 
-	fmt.Printf("callback: logged in as %+v\n", user)
+	fmt.Printf("callback: logged in as %+v\n", session)
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
 // main
 func main() {
 	fmt.Printf("main: conf: %+v\n", conf)
+
 	http.HandleFunc("/", index)
 	http.HandleFunc("/login", login)
 	http.HandleFunc("/callback", callback)
+
+	http.HandleFunc("/favicon.ico", http.NotFound)
+	http.HandleFunc("/favicon.png", http.NotFound)
+	http.HandleFunc("/opensearch.xml", http.NotFound)
+
 	if err := http.ListenAndServe("127.0.0.1:8000", nil); err != nil {
 		log.Fatal(err)
 	}
