@@ -17,63 +17,67 @@ import (
 
 var (
 	// 3-legged OAuth2 flow
-	conf = &oauth2.Config{
+	conf = oauth2.Config{
 		ClientID:     os.Getenv("GITHUB_CLIENT_ID"),
 		ClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
 		RedirectURL:  "http://127.0.0.1:8000/callback",
 		Scopes:       []string{"user:email"},
 		Endpoint:     github.Endpoint,
 	}
-	confState = randomState(20)
+	confState = randomString(20)
 )
 
-// randomState
-func randomState(length int) string {
+// randomString
+func randomString(length int) string {
 	raw := make([]byte, length)
-	_, err := io.ReadFull(rand.Reader, raw)
-	if err != nil {
-		log.Fatalf("randomState failed: %v\n", err)
+	if _, err := io.ReadFull(rand.Reader, raw); err != nil {
+		log.Fatalf("randomString: read failed: %v\n", err)
 	}
-	return base64.RawURLEncoding.EncodeToString(raw)[:length]
+	str := base64.RawURLEncoding.EncodeToString(raw)
+	return str[:length]
 }
+
+const indexPage = `<html>
+	<body>Log in with <a href="/login">GitHub</a></body>
+</html>`
 
 // index
 func index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, err := w.Write([]byte("<html><body>Log in with <a href=\"/login\">GitHub</a></body></html>"))
-	if err != nil {
+	if _, err := fmt.Fprintf(w, indexPage); err != nil {
 		log.Printf("index: write response: %v\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
 // login
 func login(w http.ResponseWriter, r *http.Request) {
 	url := conf.AuthCodeURL(confState, oauth2.AccessTypeOnline)
+	fmt.Printf("login: url: %s\n", url)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
 // callback
 func callback(w http.ResponseWriter, r *http.Request) {
 	state := r.FormValue("state")
-	fmt.Printf("state: %q\n", state)
-
 	if state != confState {
 		log.Printf("callback: invalid state: %q\n", state)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
+	fmt.Printf("callback: state: %q\n", state)
 
 	code := r.FormValue("code")
-	fmt.Printf("code: %q\n", code)
+	fmt.Printf("callback: code: %q\n", code)
 
 	ctx := context.Background()
 	token, err := conf.Exchange(ctx, code)
-	fmt.Printf("token: %+v\n", token)
 	if err != nil {
 		log.Printf("callback: exchange failed: %v\n", err)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
+	fmt.Printf("callback: token: %+v\n", token)
 
 	req, err := http.NewRequest("GET", "https://api.github.com/user", nil)
 	if err != nil {
@@ -100,17 +104,19 @@ func callback(w http.ResponseWriter, r *http.Request) {
 		AvatarURL string `json:"avatar_url"`
 	}{}
 	dec := json.NewDecoder(res.Body)
-	err = dec.Decode(&user)
-	if err != nil {
+	if err = dec.Decode(&user); err != nil {
 		log.Printf("callback: decode user failed: %v\n", err)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
-	fmt.Printf("logged in as %+v\n", user)
+
+	fmt.Printf("callback: logged in as %+v\n", user)
+	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
 // main
 func main() {
+	fmt.Printf("main: conf: %+v\n", conf)
 	http.HandleFunc("/", index)
 	http.HandleFunc("/login", login)
 	http.HandleFunc("/callback", callback)
