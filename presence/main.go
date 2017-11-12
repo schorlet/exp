@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -68,6 +67,7 @@ func callback(w http.ResponseWriter, r *http.Request) {
 	state := r.FormValue("state")
 	if state != session.state {
 		log.Printf("callback: invalid state: %q\n", state)
+		session.clear(w)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
@@ -80,38 +80,18 @@ func callback(w http.ResponseWriter, r *http.Request) {
 	token, err := conf.Exchange(ctx, code)
 	if err != nil {
 		log.Printf("callback: exchange failed: %v\n", err)
+		session.clear(w)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 	fmt.Printf("callback: token: %+v\n", token)
 
-	req, err := http.NewRequest("GET", "https://api.github.com/user", nil)
-	if err != nil {
-		log.Printf("callback: new request failed: %v\n", err)
+	if err = session.fetchUser(token); err != nil {
+		log.Printf("callback: fetch user failed: %v\n", err)
+		session.clear(w)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
-	req.Header.Set("Accept", "application/vnd.github.v3+json")
-
-	ctx = context.Background()
-	client := conf.Client(ctx, token)
-	res, err := client.Do(req)
-	if err != nil {
-		log.Printf("callback: get authenticated user failed: %v\n", err)
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		return
-	}
-	defer res.Body.Close()
-
-	dec := json.NewDecoder(res.Body)
-	if err = dec.Decode(&session); err != nil {
-		log.Printf("callback: decode user failed: %v\n", err)
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		return
-	}
-	session.save()
-
-	fmt.Printf("callback: logged in as %+v\n", session)
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
