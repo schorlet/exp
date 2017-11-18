@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"sync"
 
 	"golang.org/x/oauth2"
 )
@@ -21,7 +22,14 @@ type session struct {
 	AvatarURL string `json:"avatar_url"`
 }
 
-var sessions = make(map[string]session)
+type store struct {
+	mu     sync.RWMutex
+	values map[string]session
+}
+
+var sessions = store{
+	values: make(map[string]session),
+}
 
 // randStr
 func randStr(length int) string {
@@ -33,14 +41,29 @@ func randStr(length int) string {
 	return str[:length]
 }
 
-// newSession
-func newSession() session {
-	s := session{
-		id:    randStr(30),
-		state: randStr(30),
-	}
-	sessions[s.id] = s
+func (store *store) create() session {
+	return store.set(
+		session{
+			id:    randStr(30),
+			state: randStr(30),
+		})
+}
+func (store *store) set(s session) session {
+	store.mu.Lock()
+	store.values[s.id] = s
+	store.mu.Unlock()
 	return s
+}
+func (store *store) delete(id string) {
+	store.mu.Lock()
+	delete(store.values, id)
+	store.mu.Unlock()
+}
+func (store *store) get(id string) (session, bool) {
+	store.mu.RLock()
+	s, ok := store.values[id]
+	store.mu.RUnlock()
+	return s, ok
 }
 
 // getSession
@@ -48,13 +71,15 @@ func getSession(r *http.Request) (session, bool) {
 	cookie, err := r.Cookie("session")
 	if err != nil {
 		log.Printf("session: get cookie failed: %v\n", err)
-		return newSession(), false
+		return sessions.create(), false
 	}
-	s, ok := sessions[cookie.Value]
+
+	s, ok := sessions.get(cookie.Value)
 	if !ok {
 		log.Printf("session: not found\n")
-		return newSession(), false
+		return sessions.create(), false
 	}
+
 	return s, s.Login != ""
 }
 
@@ -79,7 +104,7 @@ func (s session) clear(w http.ResponseWriter) {
 		MaxAge: -1,
 	}
 	http.SetCookie(w, cookie)
-	delete(sessions, s.id)
+	sessions.delete(s.id)
 }
 
 // fetchUser
@@ -103,7 +128,7 @@ func (s session) fetchUser(token *oauth2.Token) error {
 	if err = dec.Decode(&s); err != nil {
 		return fmt.Errorf("session: decode user failed: %v", err)
 	}
-	sessions[s.id] = s
+	sessions.set(s)
 	fmt.Printf("session: logged as %+v\n", s)
 
 	return nil
