@@ -27,7 +27,7 @@ const loginPage = `<html>
 </html>`
 
 const indexPage = `<html>
-	<body>Logged as %q</body>
+	<body>Logged as %q <a href="/logout">Log out</a></body>
 </html>`
 
 // index
@@ -53,6 +53,13 @@ func login(w http.ResponseWriter, r *http.Request) {
 	url := conf.AuthCodeURL(session.state, oauth2.AccessTypeOnline)
 	fmt.Printf("login: url: %s\n", url)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+}
+
+// logout
+func logout(w http.ResponseWriter, r *http.Request) {
+	session, _ := getSession(r)
+	session.clear(w)
+	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
 // callback
@@ -101,6 +108,7 @@ func main() {
 
 	http.HandleFunc("/", index)
 	http.HandleFunc("/login", login)
+	http.HandleFunc("/logout", logout)
 	http.HandleFunc("/callback", callback)
 
 	http.HandleFunc("/favicon.ico", http.NotFound)
