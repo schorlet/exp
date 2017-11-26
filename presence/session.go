@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"golang.org/x/oauth2"
 )
@@ -17,6 +18,7 @@ import (
 type session struct {
 	id        string
 	state     string
+	created   time.Time
 	Login     string `json:"login"`
 	Email     string `json:"email"`
 	AvatarURL string `json:"avatar_url"`
@@ -44,21 +46,25 @@ func randStr(length int) string {
 func (store *store) create() session {
 	return store.set(
 		session{
-			id:    randStr(30),
-			state: randStr(30),
+			id:      randStr(30),
+			state:   randStr(30),
+			created: time.Now(),
 		})
 }
+
 func (store *store) set(s session) session {
 	store.mu.Lock()
 	store.values[s.id] = s
 	store.mu.Unlock()
 	return s
 }
+
 func (store *store) delete(id string) {
 	store.mu.Lock()
 	delete(store.values, id)
 	store.mu.Unlock()
 }
+
 func (store *store) get(id string) (session, bool) {
 	store.mu.RLock()
 	s, ok := store.values[id]
@@ -70,13 +76,18 @@ func (store *store) get(id string) (session, bool) {
 func getSession(r *http.Request) (session, bool) {
 	cookie, err := r.Cookie("session")
 	if err != nil {
-		log.Printf("session: get cookie failed: %v\n", err)
 		return sessions.create(), false
 	}
 
 	s, ok := sessions.get(cookie.Value)
 	if !ok {
 		log.Printf("session: not found\n")
+		return sessions.create(), false
+	}
+
+	if d := time.Since(s.created); d > 120*time.Second {
+		log.Printf("session: expired since %v\n", d)
+		sessions.delete(s.id)
 		return sessions.create(), false
 	}
 
