@@ -7,6 +7,7 @@ import (
 	"github.com/schorlet/exp/grpc/rpc"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 )
 
 func main() {
@@ -26,15 +27,25 @@ func runClient() error {
 	// store
 	_, err = cache.Store(context.Background(), &rpc.StoreReq{Key: "gopher", Val: []byte("con")})
 	if err != nil {
-		return fmt.Errorf("failed to store: %v", err)
+		log.Fatalf("failed to store: %v", err)
 	}
 
 	// get
 	resp, err := cache.Get(context.Background(), &rpc.GetReq{Key: "gopher"})
 	if err != nil {
-		return fmt.Errorf("failed to get: %v", err)
+		log.Fatalf("failed to get: %v", err)
 	}
-
 	fmt.Printf("Got cached value: %s\n", resp.Val)
+
+	// get, expects not found
+	resp, err = cache.Get(context.Background(), &rpc.GetReq{Key: "con"})
+	if err == nil {
+		log.Fatalf("Got cached value: %s\n", resp.Val)
+	}
+	if _, ok := status.FromError(err); !ok {
+		log.Fatalf("Got unknown error: %v\n", err)
+	}
+	fmt.Printf("Got expected error: %v\n", err)
+
 	return nil
 }

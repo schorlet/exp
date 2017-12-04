@@ -7,6 +7,8 @@ import (
 	"github.com/schorlet/exp/grpc/rpc"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func main() {
@@ -35,7 +37,10 @@ type CacheService struct {
 
 // Get returns a value from the cache
 func (s *CacheService) Get(ctx context.Context, req *rpc.GetReq) (*rpc.GetResp, error) {
-	val := s.store[req.Key]
+	val, ok := s.store[req.Key]
+	if !ok {
+		return nil, status.Errorf(codes.NotFound, "Key not found %q", req.Key)
+	}
 	return &rpc.GetResp{Val: val}, nil
 }
 
