@@ -40,3 +40,7 @@ go run cmd/cache_server/main.go &
 go run cmd/cache_client/main.go
 
 
+#### Generate a self-signed X.509 certificate for a TLS server
+
+go run "$(go env GOROOT)/src/crypto/tls/generate_cert.go" -host localhost
+

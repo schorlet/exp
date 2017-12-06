@@ -1,2 +1,4 @@
 rpc/app.pb.go
+cert.pem
+key.pem
 

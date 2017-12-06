@@ -8,6 +8,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 )
 
@@ -18,7 +19,11 @@ func main() {
 }
 
 func runServer() error {
-	srv := grpc.NewServer()
+	tlsCreds, err := credentials.NewServerTLSFromFile("cert.pem", "key.pem")
+	if err != nil {
+		return err
+	}
+	srv := grpc.NewServer(grpc.Creds(tlsCreds))
 	rpc.RegisterCacheServer(srv, &CacheService{
 		store: make(map[string][]byte),
 	})

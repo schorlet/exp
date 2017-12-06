@@ -1,12 +1,14 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"log"
 
 	"github.com/schorlet/exp/grpc/rpc"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 )
 
@@ -18,7 +20,9 @@ func main() {
 
 func runClient() error {
 	// connect
-	conn, err := grpc.Dial("localhost:5051", grpc.WithInsecure())
+	// InsecureSkipVerify only for this example
+	tlsCreds := credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})
+	conn, err := grpc.Dial("localhost:5051", grpc.WithTransportCredentials(tlsCreds))
 	if err != nil {
 		return fmt.Errorf("failed to dial server: %v", err)
 	}
