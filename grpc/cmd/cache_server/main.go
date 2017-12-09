@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"log"
 	"net"
 
@@ -24,20 +25,43 @@ func runServer() error {
 		return err
 	}
 	srv := grpc.NewServer(grpc.Creds(tlsCreds))
-	rpc.RegisterCacheServer(srv, &CacheService{
-		store: make(map[string][]byte),
+
+	cacheService := CacheService{
+		store: map[string][]byte{},
+		// accounts:,
+		keysByAccount: map[string]int64{},
+	}
+	rpc.RegisterCacheServer(srv, &cacheService)
+
+	rpc.RegisterAccountsServer(srv, &AccountsService{
+		store: map[string]rpc.Account{
+			"token": {MaxCacheKeys: 2},
+		},
 	})
+
 	l, err := net.Listen("tcp", "localhost:5051")
 	if err != nil {
 		return err
 	}
+
+	go func() {
+		tlsClient := credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})
+		conn, err := grpc.Dial("localhost:5051", grpc.WithTransportCredentials(tlsClient))
+		if err != nil {
+			log.Printf("failed to dial server: %v", err)
+		}
+		cacheService.accounts = rpc.NewAccountsClient(conn)
+	}()
+
 	// blocks until complete
 	return srv.Serve(l)
 }
 
 // CacheService stores values in memory.
 type CacheService struct {
-	store map[string][]byte
+	store         map[string][]byte
+	accounts      rpc.AccountsClient
+	keysByAccount map[string]int64
 }
 
 // Get returns a value from the cache
@@ -51,6 +75,36 @@ func (s *CacheService) Get(ctx context.Context, req *rpc.GetReq) (*rpc.GetResp, 
 
 // Store sets a value into the cache
 func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) {
+	resp, err := s.accounts.GetByToken(context.Background(),
+		&rpc.GetByTokenReq{Token: req.AccountToken})
+	if err != nil {
+		return nil, status.Errorf(codes.Unknown,
+			"Failed to get token %q: %v", req.AccountToken, err)
+	}
+
+	if s.keysByAccount[req.AccountToken] >= resp.Account.MaxCacheKeys {
+		return nil, status.Errorf(codes.FailedPrecondition,
+			"Account %q exceeds max key limit %d", req.AccountToken, resp.Account.MaxCacheKeys)
+	}
+
+	if _, ok := s.store[req.Key]; !ok {
+		s.keysByAccount[req.AccountToken]++
+	}
+
 	s.store[req.Key] = req.Val
 	return &rpc.StoreResp{}, nil
+}
+
+// AccountsService stores Accounts in memory.
+type AccountsService struct {
+	store map[string]rpc.Account
+}
+
+// GetByToken returns an Account
+func (a *AccountsService) GetByToken(ctx context.Context, req *rpc.GetByTokenReq) (*rpc.GetByTokenResp, error) {
+	val, ok := a.store[req.Token]
+	if !ok {
+		return nil, status.Errorf(codes.NotFound, "Token not found %q", req.Token)
+	}
+	return &rpc.GetByTokenResp{Account: &val}, nil
 }

@@ -29,7 +29,11 @@ func runClient() error {
 	cache := rpc.NewCacheClient(conn)
 
 	// store
-	_, err = cache.Store(context.Background(), &rpc.StoreReq{Key: "gopher", Val: []byte("con")})
+	_, err = cache.Store(context.Background(), &rpc.StoreReq{
+		AccountToken: "token",
+		Key:          "gopher",
+		Val:          []byte("con"),
+	})
 	if err != nil {
 		log.Fatalf("failed to store: %v", err)
 	}
