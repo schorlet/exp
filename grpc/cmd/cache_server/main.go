@@ -2,11 +2,13 @@ package main
 
 import (
 	"crypto/tls"
+	"fmt"
 	"log"
 	"net"
 
 	"github.com/schorlet/exp/grpc/rpc"
 	"golang.org/x/net/context"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -44,17 +46,22 @@ func runServer() error {
 		return err
 	}
 
-	go func() {
+	var g errgroup.Group
+	g.Go(func() error {
+		// blocks until complete
+		return srv.Serve(l)
+	})
+	g.Go(func() error {
 		tlsClient := credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})
 		conn, err := grpc.Dial("localhost:5051", grpc.WithTransportCredentials(tlsClient))
 		if err != nil {
-			log.Printf("failed to dial server: %v", err)
+			return fmt.Errorf("failed to dial server: %v", err)
 		}
 		cacheService.accounts = rpc.NewAccountsClient(conn)
-	}()
+		return nil
+	})
 
-	// blocks until complete
-	return srv.Serve(l)
+	return g.Wait()
 }
 
 // CacheService stores values in memory.
