@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/schorlet/exp/grpc/rpc"
 	"golang.org/x/net/context"
@@ -29,17 +30,21 @@ func runClient() error {
 	cache := rpc.NewCacheClient(conn)
 
 	// store
+	start := time.Now()
 	_, err = cache.Store(context.Background(), &rpc.StoreReq{
 		AccountToken: "token",
 		Key:          "gopher",
 		Val:          []byte("con"),
 	})
+	log.Printf("cache.Store duration %s", time.Since(start))
 	if err != nil {
 		log.Fatalf("failed to store: %v", err)
 	}
 
 	// get
+	start = time.Now()
 	resp, err := cache.Get(context.Background(), &rpc.GetReq{Key: "gopher"})
+	log.Printf("cache.Get duration %s", time.Since(start))
 	if err != nil {
 		log.Fatalf("failed to get: %v", err)
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"github.com/schorlet/exp/grpc/rpc"
 	"golang.org/x/net/context"
@@ -82,8 +83,10 @@ func (s *CacheService) Get(ctx context.Context, req *rpc.GetReq) (*rpc.GetResp, 
 
 // Store sets a value into the cache
 func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) {
+	start := time.Now()
 	resp, err := s.accounts.GetByToken(context.Background(),
 		&rpc.GetByTokenReq{Token: req.AccountToken})
+	log.Printf("accounts.GetByToken duration %s", time.Since(start))
 	if err != nil {
 		return nil, status.Errorf(codes.Unknown,
 			"Failed to get token %q: %v", req.AccountToken, err)
