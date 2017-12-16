@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"time"
 
+	"github.com/schorlet/exp/grpc/interceptor"
 	"github.com/schorlet/exp/grpc/rpc"
+
 	"golang.org/x/net/context"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
@@ -29,7 +30,7 @@ func runServer() error {
 	}
 	srv := grpc.NewServer(
 		grpc.Creds(tlsCreds),
-		ServerInterceptor(),
+		interceptor.ServerInterceptor(),
 	)
 
 	cacheService := CacheService{
@@ -57,7 +58,10 @@ func runServer() error {
 	})
 	g.Go(func() error {
 		tlsClient := credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})
-		conn, err := grpc.Dial("localhost:5051", grpc.WithTransportCredentials(tlsClient))
+		conn, err := grpc.Dial("localhost:5051",
+			grpc.WithTransportCredentials(tlsClient),
+			interceptor.WithClientInterceptor(),
+		)
 		if err != nil {
 			return fmt.Errorf("failed to dial server: %v", err)
 		}
@@ -86,10 +90,8 @@ func (s *CacheService) Get(ctx context.Context, req *rpc.GetReq) (*rpc.GetResp, 
 
 // Store sets a value into the cache
 func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) {
-	start := time.Now()
 	resp, err := s.accounts.GetByToken(context.Background(),
 		&rpc.GetByTokenReq{Token: req.AccountToken})
-	log.Printf("accounts.GetByToken duration %s", time.Since(start))
 	if err != nil {
 		return nil, status.Errorf(codes.Unknown,
 			"Failed to get token %q: %v", req.AccountToken, err)

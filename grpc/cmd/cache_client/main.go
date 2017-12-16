@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/schorlet/exp/grpc/interceptor"
 	"github.com/schorlet/exp/grpc/rpc"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -24,7 +26,8 @@ func runClient() error {
 	tlsCreds := credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})
 	conn, err := grpc.Dial("localhost:5051",
 		grpc.WithTransportCredentials(tlsCreds),
-		WithClientInterceptor())
+		interceptor.WithClientInterceptor(),
+	)
 	if err != nil {
 		return fmt.Errorf("failed to dial server: %v", err)
 	}
