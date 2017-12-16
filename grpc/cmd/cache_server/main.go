@@ -27,7 +27,10 @@ func runServer() error {
 	if err != nil {
 		return err
 	}
-	srv := grpc.NewServer(grpc.Creds(tlsCreds))
+	srv := grpc.NewServer(
+		grpc.Creds(tlsCreds),
+		ServerInterceptor(),
+	)
 
 	cacheService := CacheService{
 		store: map[string][]byte{},
