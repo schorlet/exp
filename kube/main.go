@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -16,8 +19,19 @@ func main() {
 	}
 	router := Router()
 
-	log.Print("Starting the service...")
-	if err := http.ListenAndServe(":"+port, router); err != nil {
-		log.Fatal(err)
-	}
+	srv := &http.Server{Addr: ":" + port, Handler: router}
+	go func() {
+		log.Print("Starting the service...")
+		if err := srv.ListenAndServe(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
+	<-interrupt
+
+	log.Print("The service is shutting down...")
+	srv.Shutdown(context.Background())
+	log.Print("Done")
 }
