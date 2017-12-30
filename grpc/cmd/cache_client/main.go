@@ -12,6 +12,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -40,6 +41,18 @@ func runClient() error {
 		AccountToken: "token",
 		Key:          "gopher",
 		Val:          []byte("con"),
+	})
+	if err != nil {
+		log.Fatalf("failed to store: %v", err)
+	}
+
+	// store (dry run)
+	ctx, _ = context.WithTimeout(context.Background(), time.Second)
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("dry-run", "1"))
+	_, err = cache.Store(ctx, &rpc.StoreReq{
+		AccountToken: "token",
+		Key:          "con",
+		Val:          []byte("2017"),
 	})
 	if err != nil {
 		log.Fatalf("failed to store: %v", err)

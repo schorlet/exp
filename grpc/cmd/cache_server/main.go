@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -104,12 +105,32 @@ func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.Store
 			"Account %q exceeds max key limit %d", req.AccountToken, resp.Account.MaxCacheKeys)
 	}
 
-	if _, ok := s.store[req.Key]; !ok {
-		s.keysByAccount[req.AccountToken]++
+	if !dryRun(ctx) {
+		if _, ok := s.store[req.Key]; !ok {
+			s.keysByAccount[req.AccountToken]++
+		}
+		s.store[req.Key] = req.Val
 	}
 
-	s.store[req.Key] = req.Val
 	return &rpc.StoreResp{}, nil
+}
+
+func dryRun(ctx context.Context) bool {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return false
+	}
+
+	val, ok := md["dry-run"]
+	if !ok {
+		return false
+	}
+
+	if len(val) < 1 {
+		return false
+	}
+
+	return val[0] == "1"
 }
 
 // AccountsService stores Accounts in memory.
