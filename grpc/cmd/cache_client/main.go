@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/schorlet/exp/grpc/interceptor"
 	"github.com/schorlet/exp/grpc/rpc"
@@ -34,7 +35,8 @@ func runClient() error {
 	cache := rpc.NewCacheClient(conn)
 
 	// store
-	_, err = cache.Store(context.Background(), &rpc.StoreReq{
+	ctx, _ := context.WithTimeout(context.Background(), time.Second)
+	_, err = cache.Store(ctx, &rpc.StoreReq{
 		AccountToken: "token",
 		Key:          "gopher",
 		Val:          []byte("con"),
@@ -44,14 +46,16 @@ func runClient() error {
 	}
 
 	// get
-	resp, err := cache.Get(context.Background(), &rpc.GetReq{Key: "gopher"})
+	ctx, _ = context.WithTimeout(context.Background(), 50*time.Millisecond)
+	resp, err := cache.Get(ctx, &rpc.GetReq{Key: "gopher"})
 	if err != nil {
 		log.Fatalf("failed to get: %v", err)
 	}
 	fmt.Printf("Got cached value: %s\n", resp.Val)
 
 	// get, expects not found
-	resp, err = cache.Get(context.Background(), &rpc.GetReq{Key: "con"})
+	ctx, _ = context.WithTimeout(context.Background(), 50*time.Millisecond)
+	resp, err = cache.Get(ctx, &rpc.GetReq{Key: "con"})
 	if err == nil {
 		log.Fatalf("Got cached value: %s\n", resp.Val)
 	}

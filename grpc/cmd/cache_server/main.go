@@ -90,7 +90,9 @@ func (s *CacheService) Get(ctx context.Context, req *rpc.GetReq) (*rpc.GetResp, 
 
 // Store sets a value into the cache
 func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) {
-	resp, err := s.accounts.GetByToken(context.Background(),
+	// ctx is propagated from the original client call through all sub services calls,
+	// so is the deadline, the timeout for how long the entire operation takes
+	resp, err := s.accounts.GetByToken(ctx,
 		&rpc.GetByTokenReq{Token: req.AccountToken})
 	if err != nil {
 		return nil, status.Errorf(codes.Unknown,
