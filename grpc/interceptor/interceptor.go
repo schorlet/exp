@@ -6,6 +6,8 @@ import (
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // WithClientInterceptor returns a DialOption which logs RPC calls on stderr.
@@ -21,10 +23,27 @@ func clientInterceptor(
 	invoker grpc.UnaryInvoker,
 	opts ...grpc.CallOption,
 ) error {
-	start := time.Now()
-	err := invoker(ctx, method, req, reply, cc, opts...)
-	log.Printf("invoke remote method=%q duration=%s error=%v",
-		method, time.Since(start), err)
+	var (
+		attempts int
+		err      error
+	)
+	for attempts < 3 {
+		select {
+		case <-ctx.Done():
+			err = status.Errorf(codes.DeadlineExceeded,
+				"timeout reached after %d attempts: %v", attempts, ctx.Err())
+		default:
+			attempts++
+			start := time.Now()
+			err = invoker(ctx, method, req, reply, cc, opts...)
+			log.Printf("invoke=%d remote method=%q duration=%s error=%v",
+				attempts, method, time.Since(start), err)
+			if err != nil {
+				continue
+			}
+		}
+		break
+	}
 	return err
 }
 
