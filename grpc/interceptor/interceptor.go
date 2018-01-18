@@ -15,6 +15,20 @@ func WithClientInterceptor() grpc.DialOption {
 	return grpc.WithUnaryInterceptor(clientInterceptor)
 }
 
+// NotIdempotent returns a copy of ctx with "idempotent" valued to false.
+func NotIdempotent(ctx context.Context) context.Context {
+	return context.WithValue(ctx, "idempotent", false)
+}
+
+// IsIdempotent returns the "idempotent" value stored in ctx, if any.
+func IsIdempotent(ctx context.Context) bool {
+	val, ok := ctx.Value("idempotent").(bool)
+	if !ok {
+		return true
+	}
+	return val
+}
+
 func clientInterceptor(
 	ctx context.Context,
 	method string,
@@ -38,7 +52,7 @@ func clientInterceptor(
 			err = invoker(ctx, method, req, reply, cc, opts...)
 			log.Printf("invoke=%d remote method=%q duration=%s error=%v",
 				attempts, method, time.Since(start), err)
-			if err != nil {
+			if err != nil && IsIdempotent(ctx) {
 				continue
 			}
 		}
