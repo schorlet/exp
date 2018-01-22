@@ -4,6 +4,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/schorlet/exp/grpc/rpc"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -73,6 +74,7 @@ func serverInterceptor(ctx context.Context, req interface{},
 ) (resp interface{}, err error) {
 	start := time.Now()
 	resp, err = handler(ctx, req)
+	err = rpc.MarshalError(err, ctx)
 	log.Printf("invoke server method=%q duration=%s error=%v",
 		info.FullMethod, time.Since(start), err)
 	return

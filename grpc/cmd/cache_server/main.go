@@ -84,7 +84,7 @@ type CacheService struct {
 func (s *CacheService) Get(ctx context.Context, req *rpc.GetReq) (*rpc.GetResp, error) {
 	val, ok := s.store[req.Key]
 	if !ok {
-		return nil, status.Errorf(codes.NotFound, "Key not found %q", req.Key)
+		return nil, rpc.Errorf(codes.NotFound, true, "Key not found %q", req.Key)
 	}
 	return &rpc.GetResp{Val: val}, nil
 }

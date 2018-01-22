@@ -39,3 +39,10 @@ message GetByTokenResp {
 message Account {
 	int64 max_cache_keys = 1;
 }
+
+message Error {
+	int64 code = 1;
+	string message = 2;
+	bool temporary = 3;
+	int64 userErrorCode = 4;
+}
