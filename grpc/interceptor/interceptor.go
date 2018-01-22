@@ -8,6 +8,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -16,18 +17,13 @@ func WithClientInterceptor() grpc.DialOption {
 	return grpc.WithUnaryInterceptor(clientInterceptor)
 }
 
-// NotIdempotent returns a copy of ctx with "idempotent" valued to false.
-func NotIdempotent(ctx context.Context) context.Context {
-	return context.WithValue(ctx, "idempotent", false)
-}
-
-// IsIdempotent returns the "idempotent" value stored in ctx, if any.
-func IsIdempotent(ctx context.Context) bool {
-	val, ok := ctx.Value("idempotent").(bool)
-	if !ok {
-		return true
+// IsTemporaryError returns true if md has a temporary rpc-error.
+func IsTemporaryError(md metadata.MD) bool {
+	err := rpc.UnmarshalError(md)
+	if err != nil {
+		return err.Temporary
 	}
-	return val
+	return false
 }
 
 func clientInterceptor(
@@ -41,7 +37,9 @@ func clientInterceptor(
 	var (
 		attempts int
 		err      error
+		trailer  metadata.MD
 	)
+	opts = append(opts, grpc.Trailer(&trailer))
 	for attempts < 3 {
 		select {
 		case <-ctx.Done():
@@ -53,7 +51,7 @@ func clientInterceptor(
 			err = invoker(ctx, method, req, reply, cc, opts...)
 			log.Printf("invoke=%d remote method=%q duration=%s error=%v",
 				attempts, method, time.Since(start), err)
-			if err != nil && IsIdempotent(ctx) {
+			if err != nil && IsTemporaryError(trailer) {
 				continue
 			}
 		}
