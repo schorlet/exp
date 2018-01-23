@@ -1,4 +1,4 @@
-rpc/app.pb.go
+app.pb.go
 cert.pem
 key.pem
 

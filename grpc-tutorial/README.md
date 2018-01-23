@@ -26,7 +26,7 @@ Update the environment variable PATH to include the path to the protoc binary fi
 
 ## Generate gRPC code
 
-`protoc rpc/app.proto -I rpc/ --go_out=plugins=grpc:rpc/`
+`protoc app.proto --go_out=plugins=grpc:.`
 
 
 

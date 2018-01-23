@@ -1,11 +1,11 @@
-package rpc
+package tutorial
 
 import (
 	"encoding/base64"
 	"fmt"
 	"log"
 
-	pb "github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -36,7 +36,7 @@ func MarshalError(err error, ctx context.Context) error {
 		return err
 	}
 
-	pberr, marshalerr := pb.Marshal(rerr)
+	pberr, marshalerr := proto.Marshal(rerr)
 	if marshalerr == nil {
 		md := metadata.Pairs("rpc-error", base64.StdEncoding.EncodeToString(pberr))
 		trailerr := grpc.SetTrailer(ctx, md)
@@ -62,7 +62,7 @@ func UnmarshalError(md metadata.MD) *Error {
 		return nil
 	}
 	var rerr Error
-	if err := pb.Unmarshal(buf, &rerr); err != nil {
+	if err := proto.Unmarshal(buf, &rerr); err != nil {
 		return nil
 	}
 	return &rerr

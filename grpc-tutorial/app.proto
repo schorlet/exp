@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package rpc;
+package tutorial;
 
 service Cache {
 	rpc Store(StoreReq) returns (StoreResp) {}

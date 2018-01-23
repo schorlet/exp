@@ -7,7 +7,6 @@ import (
 	"time"
 
 	tutorial "github.com/schorlet/exp/grpc-tutorial"
-	"github.com/schorlet/exp/grpc-tutorial/rpc"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -33,11 +32,11 @@ func runClient() error {
 	if err != nil {
 		return fmt.Errorf("failed to dial server: %v", err)
 	}
-	cache := rpc.NewCacheClient(conn)
+	cache := tutorial.NewCacheClient(conn)
 
 	// store
 	ctx, _ := context.WithTimeout(context.Background(), time.Second)
-	_, err = cache.Store(ctx, &rpc.StoreReq{
+	_, err = cache.Store(ctx, &tutorial.StoreReq{
 		AccountToken: "token",
 		Key:          "gopher",
 		Val:          []byte("con"),
@@ -49,7 +48,7 @@ func runClient() error {
 	// store (dry run)
 	ctx, _ = context.WithTimeout(context.Background(), time.Second)
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("dry-run", "1"))
-	_, err = cache.Store(ctx, &rpc.StoreReq{
+	_, err = cache.Store(ctx, &tutorial.StoreReq{
 		AccountToken: "token",
 		Key:          "con",
 		Val:          []byte("2017"),
@@ -60,7 +59,7 @@ func runClient() error {
 
 	// get
 	ctx, _ = context.WithTimeout(context.Background(), 50*time.Millisecond)
-	resp, err := cache.Get(ctx, &rpc.GetReq{Key: "gopher"})
+	resp, err := cache.Get(ctx, &tutorial.GetReq{Key: "gopher"})
 	if err != nil {
 		log.Fatalf("Failed to get: %v", err)
 	}
@@ -68,7 +67,7 @@ func runClient() error {
 
 	// get, expects not found
 	ctx, _ = context.WithTimeout(context.Background(), 50*time.Millisecond)
-	resp, err = cache.Get(ctx, &rpc.GetReq{Key: "con"})
+	resp, err = cache.Get(ctx, &tutorial.GetReq{Key: "con"})
 	if err == nil {
 		log.Fatalf("Got cached value: %s\n", resp.Val)
 	}

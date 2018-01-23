@@ -7,7 +7,6 @@ import (
 	"net"
 
 	tutorial "github.com/schorlet/exp/grpc-tutorial"
-	"github.com/schorlet/exp/grpc-tutorial/rpc"
 
 	"golang.org/x/net/context"
 	"golang.org/x/sync/errgroup"
@@ -39,10 +38,10 @@ func runServer() error {
 		// accounts:,
 		keysByAccount: map[string]int64{},
 	}
-	rpc.RegisterCacheServer(srv, &cacheService)
+	tutorial.RegisterCacheServer(srv, &cacheService)
 
-	rpc.RegisterAccountsServer(srv, &AccountsService{
-		store: map[string]rpc.Account{
+	tutorial.RegisterAccountsServer(srv, &AccountsService{
+		store: map[string]tutorial.Account{
 			"token": {MaxCacheKeys: 2},
 		},
 	})
@@ -66,7 +65,7 @@ func runServer() error {
 		if err != nil {
 			return fmt.Errorf("failed to dial server: %v", err)
 		}
-		cacheService.accounts = rpc.NewAccountsClient(conn)
+		cacheService.accounts = tutorial.NewAccountsClient(conn)
 		return nil
 	})
 
@@ -76,25 +75,25 @@ func runServer() error {
 // CacheService stores values in memory.
 type CacheService struct {
 	store         map[string][]byte
-	accounts      rpc.AccountsClient
+	accounts      tutorial.AccountsClient
 	keysByAccount map[string]int64
 }
 
 // Get returns a value from the cache.
-func (s *CacheService) Get(ctx context.Context, req *rpc.GetReq) (*rpc.GetResp, error) {
+func (s *CacheService) Get(ctx context.Context, req *tutorial.GetReq) (*tutorial.GetResp, error) {
 	val, ok := s.store[req.Key]
 	if !ok {
-		return nil, rpc.Errorf(codes.NotFound, true, "key not found %q", req.Key)
+		return nil, tutorial.Errorf(codes.NotFound, true, "key not found %q", req.Key)
 	}
-	return &rpc.GetResp{Val: val}, nil
+	return &tutorial.GetResp{Val: val}, nil
 }
 
 // Store sets a value into the cache.
-func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) {
+func (s *CacheService) Store(ctx context.Context, req *tutorial.StoreReq) (*tutorial.StoreResp, error) {
 	// ctx is propagated from the original client call through all sub services calls,
 	// so is the deadline, the timeout for how long the entire operation takes
 	resp, err := s.accounts.GetByToken(ctx,
-		&rpc.GetByTokenReq{Token: req.AccountToken})
+		&tutorial.GetByTokenReq{Token: req.AccountToken})
 	if err != nil {
 		return nil, status.Errorf(codes.Unknown,
 			"failed to get token %q: %v", req.AccountToken, err)
@@ -112,7 +111,7 @@ func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.Store
 		s.store[req.Key] = req.Val
 	}
 
-	return &rpc.StoreResp{}, nil
+	return &tutorial.StoreResp{}, nil
 }
 
 func dryRun(ctx context.Context) bool {
@@ -135,14 +134,14 @@ func dryRun(ctx context.Context) bool {
 
 // AccountsService stores Accounts in memory.
 type AccountsService struct {
-	store map[string]rpc.Account
+	store map[string]tutorial.Account
 }
 
 // GetByToken returns an Account.
-func (a *AccountsService) GetByToken(ctx context.Context, req *rpc.GetByTokenReq) (*rpc.GetByTokenResp, error) {
+func (a *AccountsService) GetByToken(ctx context.Context, req *tutorial.GetByTokenReq) (*tutorial.GetByTokenResp, error) {
 	val, ok := a.store[req.Token]
 	if !ok {
 		return nil, status.Errorf(codes.NotFound, "token not found %q", req.Token)
 	}
-	return &rpc.GetByTokenResp{Account: &val}, nil
+	return &tutorial.GetByTokenResp{Account: &val}, nil
 }
