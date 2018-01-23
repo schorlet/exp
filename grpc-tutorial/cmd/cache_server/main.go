@@ -6,7 +6,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/schorlet/exp/grpc-tutorial/interceptor"
+	tutorial "github.com/schorlet/exp/grpc-tutorial"
 	"github.com/schorlet/exp/grpc-tutorial/rpc"
 
 	"golang.org/x/net/context"
@@ -31,7 +31,7 @@ func runServer() error {
 	}
 	srv := grpc.NewServer(
 		grpc.Creds(tlsCreds),
-		interceptor.ServerInterceptor(),
+		tutorial.ServerInterceptor(),
 	)
 
 	cacheService := CacheService{
@@ -61,7 +61,7 @@ func runServer() error {
 		tlsClient := credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})
 		conn, err := grpc.Dial("localhost:5051",
 			grpc.WithTransportCredentials(tlsClient),
-			interceptor.WithClientInterceptor(),
+			tutorial.WithClientInterceptor(),
 		)
 		if err != nil {
 			return fmt.Errorf("failed to dial server: %v", err)

@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/schorlet/exp/grpc-tutorial/interceptor"
+	tutorial "github.com/schorlet/exp/grpc-tutorial"
 	"github.com/schorlet/exp/grpc-tutorial/rpc"
 
 	"golang.org/x/net/context"
@@ -28,7 +28,7 @@ func runClient() error {
 	tlsCreds := credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})
 	conn, err := grpc.Dial("localhost:5051",
 		grpc.WithTransportCredentials(tlsCreds),
-		interceptor.WithClientInterceptor(),
+		tutorial.WithClientInterceptor(),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to dial server: %v", err)
