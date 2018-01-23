@@ -4,7 +4,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/schorlet/exp/grpc/rpc"
+	"github.com/schorlet/exp/grpc-tutorial/rpc"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
