@@ -80,16 +80,16 @@ type CacheService struct {
 	keysByAccount map[string]int64
 }
 
-// Get returns a value from the cache
+// Get returns a value from the cache.
 func (s *CacheService) Get(ctx context.Context, req *rpc.GetReq) (*rpc.GetResp, error) {
 	val, ok := s.store[req.Key]
 	if !ok {
-		return nil, rpc.Errorf(codes.NotFound, true, "Key not found %q", req.Key)
+		return nil, rpc.Errorf(codes.NotFound, true, "key not found %q", req.Key)
 	}
 	return &rpc.GetResp{Val: val}, nil
 }
 
-// Store sets a value into the cache
+// Store sets a value into the cache.
 func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) {
 	// ctx is propagated from the original client call through all sub services calls,
 	// so is the deadline, the timeout for how long the entire operation takes
@@ -97,12 +97,12 @@ func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.Store
 		&rpc.GetByTokenReq{Token: req.AccountToken})
 	if err != nil {
 		return nil, status.Errorf(codes.Unknown,
-			"Failed to get token %q: %v", req.AccountToken, err)
+			"failed to get token %q: %v", req.AccountToken, err)
 	}
 
 	if s.keysByAccount[req.AccountToken] >= resp.Account.MaxCacheKeys {
 		return nil, status.Errorf(codes.FailedPrecondition,
-			"Account %q exceeds max key limit %d", req.AccountToken, resp.Account.MaxCacheKeys)
+			"account %q exceeds max key limit %d", req.AccountToken, resp.Account.MaxCacheKeys)
 	}
 
 	if !dryRun(ctx) {
@@ -138,11 +138,11 @@ type AccountsService struct {
 	store map[string]rpc.Account
 }
 
-// GetByToken returns an Account
+// GetByToken returns an Account.
 func (a *AccountsService) GetByToken(ctx context.Context, req *rpc.GetByTokenReq) (*rpc.GetByTokenResp, error) {
 	val, ok := a.store[req.Token]
 	if !ok {
-		return nil, status.Errorf(codes.NotFound, "Token not found %q", req.Token)
+		return nil, status.Errorf(codes.NotFound, "token not found %q", req.Token)
 	}
 	return &rpc.GetByTokenResp{Account: &val}, nil
 }

@@ -44,5 +44,4 @@ message Error {
 	int64 code = 1;
 	string message = 2;
 	bool temporary = 3;
-	int64 userErrorCode = 4;
 }

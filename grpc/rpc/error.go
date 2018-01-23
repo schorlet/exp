@@ -18,14 +18,18 @@ func (e *Error) Error() string {
 	return e.Message
 }
 
+// Errorf returns *rpc.Error.
 func Errorf(code codes.Code, temporary bool, msg string, args ...interface{}) error {
 	return &Error{
 		Code:      int64(code),
-		Message:   fmt.Sprintf(msg, args),
+		Message:   fmt.Sprintf(msg, args...),
 		Temporary: temporary,
 	}
 }
 
+// MarshalError sets err in the trailer metadata.
+// Returns a RPC status code (status.*Status).
+// Does nothing if err can't be casted to *rpc.Error.
 func MarshalError(err error, ctx context.Context) error {
 	rerr, ok := err.(*Error)
 	if !ok {
@@ -37,13 +41,14 @@ func MarshalError(err error, ctx context.Context) error {
 		md := metadata.Pairs("rpc-error", base64.StdEncoding.EncodeToString(pberr))
 		trailerr := grpc.SetTrailer(ctx, md)
 		if trailerr != nil {
-			log.Printf("Unable to SetTrailer metadata error: %v\n", trailerr)
+			log.Printf("Unable to set rpc-error metadata: %v\n", trailerr)
 		}
 	}
 
 	return status.Errorf(codes.Code(rerr.Code), rerr.Message)
 }
 
+// UnmarshalError gets an *rpc.Error from metadata, if any.
 func UnmarshalError(md metadata.MD) *Error {
 	vals, ok := md["rpc-error"]
 	if !ok {

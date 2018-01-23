@@ -49,7 +49,7 @@ func clientInterceptor(
 			attempts++
 			start := time.Now()
 			err = invoker(ctx, method, req, reply, cc, opts...)
-			log.Printf("invoke=%d remote method=%q duration=%s error=%v",
+			log.Printf("Invoke=%d remote method=%q duration=%s error=%v",
 				attempts, method, time.Since(start), err)
 			if err != nil && IsTemporaryError(trailer) {
 				continue
@@ -73,7 +73,7 @@ func serverInterceptor(ctx context.Context, req interface{},
 	start := time.Now()
 	resp, err = handler(ctx, req)
 	err = rpc.MarshalError(err, ctx)
-	log.Printf("invoke server method=%q duration=%s error=%v",
+	log.Printf("Invoke server method=%q duration=%s error=%v",
 		info.FullMethod, time.Since(start), err)
 	return
 }

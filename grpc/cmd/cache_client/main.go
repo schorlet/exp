@@ -43,7 +43,7 @@ func runClient() error {
 		Val:          []byte("con"),
 	})
 	if err != nil {
-		log.Fatalf("failed to store: %v", err)
+		log.Fatalf("Failed to store: %v", err)
 	}
 
 	// store (dry run)
@@ -55,14 +55,14 @@ func runClient() error {
 		Val:          []byte("2017"),
 	})
 	if err != nil {
-		log.Fatalf("failed to store: %v", err)
+		log.Fatalf("Failed to store: %v", err)
 	}
 
 	// get
 	ctx, _ = context.WithTimeout(context.Background(), 50*time.Millisecond)
 	resp, err := cache.Get(ctx, &rpc.GetReq{Key: "gopher"})
 	if err != nil {
-		log.Fatalf("failed to get: %v", err)
+		log.Fatalf("Failed to get: %v", err)
 	}
 	fmt.Printf("Got cached value: %s\n", resp.Val)
 
