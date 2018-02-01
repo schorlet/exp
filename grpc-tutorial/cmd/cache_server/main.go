@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"fmt"
 	"log"
 	"net"
@@ -57,7 +56,10 @@ func runServer() error {
 		return srv.Serve(l)
 	})
 	g.Go(func() error {
-		tlsClient := credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})
+		tlsClient, err := credentials.NewClientTLSFromFile("cert.pem", "")
+		if err != nil {
+			return err
+		}
 		conn, err := grpc.Dial("localhost:5051",
 			grpc.WithTransportCredentials(tlsClient),
 			tutorial.WithClientInterceptor(),

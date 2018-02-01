@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"fmt"
 	"log"
 	"time"
@@ -23,8 +22,10 @@ func main() {
 
 func runClient() error {
 	// connect
-	// InsecureSkipVerify only for this example
-	tlsCreds := credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})
+	tlsCreds, err := credentials.NewClientTLSFromFile("cert.pem", "")
+	if err != nil {
+		return err
+	}
 	conn, err := grpc.Dial("localhost:5051",
 		grpc.WithTransportCredentials(tlsCreds),
 		tutorial.WithClientInterceptor(),
