@@ -76,5 +76,15 @@ func runClient() error {
 	}
 	fmt.Printf("Got expected error: %v\n", err)
 
+	// dump
+	ctx, _ = context.WithTimeout(context.Background(), 50*time.Millisecond)
+	dump, err := cache.Dump(ctx, &tutorial.DumpReq{})
+	if err != nil {
+		log.Fatalf("Failed to dump: %v", err)
+	}
+	for _, item := range dump.Items {
+		fmt.Printf("Got dump item: %s:%s\n", item.Key, item.Val)
+	}
+
 	return nil
 }

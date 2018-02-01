@@ -132,6 +132,17 @@ func dryRun(ctx context.Context) bool {
 	return val[0] == "1"
 }
 
+// Dump returns all values from the cache.
+func (s *CacheService) Dump(context.Context, *tutorial.DumpReq) (*tutorial.DumpResp, error) {
+	var i int
+	resp := tutorial.DumpResp{Items: make([]*tutorial.DumpItem, len(s.store))}
+	for key, val := range s.store {
+		resp.Items[i] = &tutorial.DumpItem{Key: key, Val: val}
+		i++
+	}
+	return &resp, nil
+}
+
 // AccountsService stores Accounts in memory.
 type AccountsService struct {
 	store map[string]tutorial.Account
