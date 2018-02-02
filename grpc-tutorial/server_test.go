@@ -46,10 +46,41 @@ func withClient(t *testing.T, fn func(api.CacheClient)) {
 	fn(client)
 }
 
+func TestBadToken(t *testing.T) {
+	withClient(t, func(client api.CacheClient) {
+		// no token
+		ctx, _ := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		_, err := client.Store(ctx, &api.StoreReq{
+			Key: "gopher",
+			Val: []byte("con"),
+		})
+		if err == nil {
+			t.Fatal("Store succeeded, expect failed")
+		}
+		if _, ok := status.FromError(err); !ok {
+			t.Fatalf("Got unknown error: %v", err)
+		}
+
+		// bad token
+		ctx, _ = context.WithTimeout(context.Background(), 100*time.Millisecond)
+		_, err = client.Store(ctx, &api.StoreReq{
+			AccountToken: "foo",
+			Key:          "gopher",
+			Val:          []byte("con"),
+		})
+		if err == nil {
+			t.Fatal("Store succeeded, expect failed")
+		}
+		if _, ok := status.FromError(err); !ok {
+			t.Fatalf("Got unknown error: %v", err)
+		}
+	})
+}
+
 func TestBasic(t *testing.T) {
 	withClient(t, func(client api.CacheClient) {
 		// store
-		ctx, _ := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		ctx, _ := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		_, err := client.Store(ctx, &api.StoreReq{
 			AccountToken: "token",
 			Key:          "gopher",
@@ -74,7 +105,7 @@ func TestBasic(t *testing.T) {
 func TestDryRun(t *testing.T) {
 	withClient(t, func(client api.CacheClient) {
 		// store (dry run)
-		ctx, _ := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		ctx, _ := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("dry-run", "1"))
 		_, err := client.Store(ctx, &api.StoreReq{
 			AccountToken: "token",
@@ -89,10 +120,10 @@ func TestDryRun(t *testing.T) {
 		ctx, _ = context.WithTimeout(context.Background(), 10*time.Millisecond)
 		resp, err := client.Get(ctx, &api.GetReq{Key: "con"})
 		if err == nil {
-			t.Fatalf("Got cached value: %s\n", resp.Val)
+			t.Fatalf("Got cached value: %s", resp.Val)
 		}
 		if _, ok := status.FromError(err); !ok {
-			t.Fatalf("Got unknown error: %v\n", err)
+			t.Fatalf("Got unknown error: %v", err)
 		}
 	})
 }
@@ -100,7 +131,7 @@ func TestDryRun(t *testing.T) {
 func TestDump(t *testing.T) {
 	withClient(t, func(client api.CacheClient) {
 		// store 1
-		ctx, _ := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		ctx, _ := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		_, err := client.Store(ctx, &api.StoreReq{
 			AccountToken: "token",
 			Key:          "gopher",
@@ -111,7 +142,7 @@ func TestDump(t *testing.T) {
 		}
 
 		// store 2
-		ctx, _ = context.WithTimeout(context.Background(), 50*time.Millisecond)
+		ctx, _ = context.WithTimeout(context.Background(), 100*time.Millisecond)
 		_, err = client.Store(ctx, &api.StoreReq{
 			AccountToken: "token",
 			Key:          "go",
