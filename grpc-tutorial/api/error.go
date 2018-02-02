@@ -1,4 +1,4 @@
-package tutorial
+package api
 
 import (
 	"encoding/base64"

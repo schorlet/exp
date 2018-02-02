@@ -1,4 +1,4 @@
-app.pb.go
+api/app.pb.go
 cert.pem
 key.pem
 

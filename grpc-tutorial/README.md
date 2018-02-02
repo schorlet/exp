@@ -6,7 +6,7 @@ From the video: [GopherCon 2017: Alan Shreve - grpc: From Tutorial to Production
 
 ## Setup
 
-#### Install gRPC
+### Install gRPC
 
 `go get -u google.golang.org/grpc`
 
@@ -24,25 +24,12 @@ Update the environment variable PATH to include the path to the protoc binary fi
 
 
 
-## Generate gRPC code
+### Generate gRPC code
 
-`protoc app.proto --go_out=plugins=grpc:.`
-
-
-
-## Run
-
-#### Run the server
-
-`go run cmd/cache_server/main.go &`
+`protoc protoc api/app.proto --go_out=plugins=grpc:.`
 
 
-#### Run the client
-
-`go run cmd/cache_client/main.go`
-
-
-#### Generate a self-signed X.509 certificate for a TLS server
+### Generate a self-signed X.509 certificate for a TLS server
 
 `go run "$(go env GOROOT)/src/crypto/tls/generate_cert.go" -host localhost`
 
