@@ -1,7 +1,7 @@
 #-*- coding: utf-8 -*-
 import coin_change as coin
-import itertools as it
 from collections import defaultdict
+import math
 
 if __name__ == '__main__':
 	import sys
@@ -25,7 +25,16 @@ if __name__ == '__main__':
 				for vi in range(v):
 					vals.append(k)
 
-			count = len(set(it.permutations(vals, n)))
+			if 1 == len(chg):
+				count = 1
+			elif n == len(chg):
+				# permutations without repetition
+				count = math.factorial(n)
+			else:
+				# permutations with repetition
+				count = math.factorial(n)
+				for v in chg.values():
+					if 1 < v: count /= math.factorial(v)
 			xcount += count
 			total += count
 
