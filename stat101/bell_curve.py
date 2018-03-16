@@ -7,6 +7,9 @@ if __name__ == '__main__':
 	import sys
 	n = int(sys.argv[1])
 
+	if 8 < n:
+		raise ValueError('unable to compute more than 8')
+
 	p = {
 		1: 1/6.0,
 		2: 1/6.0,
@@ -25,6 +28,9 @@ if __name__ == '__main__':
 			se += e
 			ze *= p[e]
 		bell[se] += ze
+
+	# assert fsum(bell.values()) == 1
+	assert abs(1-fsum(bell.values())) < 1e-09
 
 	r = 0.6 / max(bell.values())
 	for k, v in sorted(bell.items()):
