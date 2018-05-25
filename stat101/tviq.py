@@ -4,6 +4,8 @@ import csv
 from pprint import pprint
 import math
 
+from matplotlib import pyplot
+
 
 def mean(data):
 	return float(sum(data)) / len(data)
@@ -56,24 +58,22 @@ def pearson(data):
 	print('pearson: {}'.format(p))
 
 
-# https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient
-raw_data = """
-0	86
-20	97
-28	99
-27	100
-50	101
-29	103
-7	106
-17	110
-6	112
-12	113
-"""
+def scatter(path, data):
+	xs = [row[0] for row in data]
+	ys = [row[1] for row in data]
+
+	pyplot.scatter(xs, ys, c='red', marker='+')
+	pyplot.grid()
+	# pyplot.savefig(path)
+	pyplot.show()
+
 
 if __name__ == '__main__':
-	lines = raw_data.strip().split('\n')
-	rows = csv.reader(lines, delimiter='\t', strict=True)
-	data = [tuple(map(int, row)) for row in rows]
+	with open('tviq.txt', newline='') as lines:
+		rows = csv.reader(lines, delimiter='\t', strict=True)
+		data = [tuple(map(int, row)) for row in rows]
 
 	spearman(data)
 	pearson(data)
+
+	scatter('tviq.png', data)
