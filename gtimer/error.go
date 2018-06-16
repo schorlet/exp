@@ -17,6 +17,7 @@ func (me multiErr) orNil() error {
 	return me
 }
 
+// append returns err, not me.
 func (me *multiErr) append(err error) error {
 	if err != nil {
 		me.Errors = append(me.Errors, err)

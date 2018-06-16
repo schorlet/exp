@@ -20,13 +20,14 @@ const todoSchema = `
 	create index TODO_IDX_STATUS on TODO (STATUS);
 `
 
-// MustConnect connects to the DB or panics on error.
-func MustConnect(db string) *sqlx.DB {
-	return sqlx.MustConnect("sqlite3", db)
+// MustConnect connects to the datasource or panics on error.
+func MustConnect(datasource string) *DB {
+	db := sqlx.MustConnect("sqlite3", datasource)
+	return &DB{DB: db}
 }
 
 // MustCreateSchema creates the SQL schema or panics on error.
-func MustCreateSchema(db *sqlx.DB) {
+func MustCreateSchema(db *DB) {
 	_, err := db.Exec(todoSchema)
 	if err != nil {
 		panic(err)

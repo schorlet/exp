@@ -41,7 +41,5 @@ def permutations(n):
 if __name__ == '__main__':
 	import sys
 	n = int(sys.argv[1])
-	for l in enumerate(combinations(n)):
-		print l[0]+1, l[1]
-	for l in enumerate(permutations(n)):
-		print l[0]+1, l[1]
+	for l in combinations(n):
+		print l

@@ -20,7 +20,7 @@ func randomString(length int) (string, error) {
 }
 
 // CreateTodo creates a Todo with the given Title.
-func CreateTodo(db *sqlx.DB, title string) (Todo, error) {
+func CreateTodo(db *DB, title string) (Todo, error) {
 	query := `
 			insert into TODO (ID, TITLE)
 			values (?, ?)`
@@ -42,7 +42,7 @@ func CreateTodo(db *sqlx.DB, title string) (Todo, error) {
 }
 
 // GetTodo returns the Todo with the given ID.
-func GetTodo(db *sqlx.DB, id string) (Todo, error) {
+func GetTodo(db *DB, id string) (Todo, error) {
 	query := `
 			select ID, TITLE, STATUS, CREATED, UPDATED
 			from TODO
@@ -55,7 +55,7 @@ func GetTodo(db *sqlx.DB, id string) (Todo, error) {
 }
 
 // GetTodos returns all Todos.
-func GetTodos(db *sqlx.DB) (Todos, error) {
+func GetTodos(db *DB) (Todos, error) {
 	query := `
 			select ID, TITLE, STATUS, CREATED, UPDATED
 			from TODO
@@ -68,7 +68,7 @@ func GetTodos(db *sqlx.DB) (Todos, error) {
 }
 
 // GetTodosByStatus returns all Todos with the specified Status.
-func GetTodosByStatus(db *sqlx.DB, status string) (Todos, error) {
+func GetTodosByStatus(db *DB, status string) (Todos, error) {
 	query := `
 			select ID, TITLE, STATUS, CREATED, UPDATED
 			from TODO
@@ -82,7 +82,7 @@ func GetTodosByStatus(db *sqlx.DB, status string) (Todos, error) {
 }
 
 // UpdateTodo updates the Title and Status of the given Todo.
-func UpdateTodo(db *sqlx.DB, todo Todo) error {
+func UpdateTodo(db *DB, todo Todo) error {
 	query := `
 			update TODO set TITLE = ?, STATUS = ?
 			where ID = ?`
@@ -103,7 +103,7 @@ func UpdateTodo(db *sqlx.DB, todo Todo) error {
 }
 
 // DeleteTodo deletes the Todo with the given ID.
-func DeleteTodo(db *sqlx.DB, id string) error {
+func DeleteTodo(db *DB, id string) error {
 	query := `delete from TODO where ID = ?`
 
 	return withTx(db, func(ext sqlx.Ext) error {

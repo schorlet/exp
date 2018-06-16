@@ -1,4 +1,6 @@
+#!/usr/bin/env python2
 #-*- coding: utf-8 -*-
+
 import itertools as it
 from collections import defaultdict
 from math import fsum
@@ -21,6 +23,7 @@ if __name__ == '__main__':
 	assert fsum(p.values()) == 1
 
 	bell = defaultdict(int)
+	bel2 = defaultdict(int)
 	for event in it.product(p.keys(), repeat=n):
 		se = 0
 		ze = 1
@@ -28,10 +31,12 @@ if __name__ == '__main__':
 			se += e
 			ze *= p[e]
 		bell[se] += ze
+		bel2[se] += 1
 
 	# assert fsum(bell.values()) == 1
 	assert abs(1-fsum(bell.values())) < 1e-09
+	assert sum(bel2.values()) == pow(len(p), n)
 
 	r = 0.6 / max(bell.values())
 	for k, v in sorted(bell.items()):
-		print '%2d' % k, '%5.2f' % (v*100), '-'*int(round(v*100*r))
+		print '%2d' % k, '%2d' % bel2[k], '%5.2f' % (v*100), '-'*int(round(v*100*r))
