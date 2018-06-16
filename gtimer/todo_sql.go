@@ -20,7 +20,7 @@ func randomString(length int) (string, error) {
 }
 
 // CreateTodo creates a Todo with the given Title.
-func CreateTodo(db *DB, title string) (Todo, error) {
+func CreateTodo(e sqlx.Ext, title string) (Todo, error) {
 	query := `
 			insert into TODO (ID, TITLE)
 			values (?, ?)`
@@ -30,45 +30,42 @@ func CreateTodo(db *DB, title string) (Todo, error) {
 		return Todo{}, err
 	}
 
-	err = withTx(db, func(ext sqlx.Ext) error {
-		_, ere := ext.Exec(query, id, title)
-		return ere
-	})
+	_, err = e.Exec(query, id, title)
 	if err != nil {
 		return Todo{}, err
 	}
 
-	return GetTodo(db, id)
+	return GetTodo(e, id)
 }
 
 // GetTodo returns the Todo with the given ID.
-func GetTodo(db *DB, id string) (Todo, error) {
+func GetTodo(q sqlx.Queryer, id string) (Todo, error) {
 	query := `
 			select ID, TITLE, STATUS, CREATED, UPDATED
 			from TODO
 			where id = ?`
 
 	var todo Todo
-	err := db.Get(&todo, query, id)
+	err := sqlx.Get(q, &todo, query, id)
 
 	return todo, err
 }
 
 // GetTodos returns all Todos.
-func GetTodos(db *DB) (Todos, error) {
+func GetTodos(q sqlx.Queryer) (Todos, error) {
 	query := `
 			select ID, TITLE, STATUS, CREATED, UPDATED
 			from TODO
 			order by CREATED desc, TITLE asc`
 
 	var todos Todos
-	err := db.Select(&todos, query)
+	err := sqlx.Select(q, &todos, query)
 
 	return todos, err
 }
 
 // GetTodosByStatus returns all Todos with the specified Status.
-func GetTodosByStatus(db *DB, status string) (Todos, error) {
+func GetTodosByStatus(q sqlx.Queryer, status string) (Todos, error) {
 	query := `
 			select ID, TITLE, STATUS, CREATED, UPDATED
 			from TODO
@@ -76,47 +73,41 @@ func GetTodosByStatus(db *DB, status string) (Todos, error) {
 			order by CREATED desc, TITLE asc`
 
 	var todos Todos
-	err := db.Select(&todos, query, status)
+	err := sqlx.Select(q, &todos, query, status)
 
 	return todos, err
 }
 
 // UpdateTodo updates the Title and Status of the given Todo.
-func UpdateTodo(db *DB, todo Todo) error {
+func UpdateTodo(e sqlx.Ext, todo Todo) error {
 	query := `
 			update TODO set TITLE = ?, STATUS = ?
 			where ID = ?`
 
-	return withTx(db, func(ext sqlx.Ext) error {
-		r, err := ext.Exec(query, todo.Title, todo.Status, todo.ID)
-		if err != nil {
-			return err
-		}
-
-		count, err := r.RowsAffected()
-		if err == nil && count == 0 {
-			err = sql.ErrNoRows
-		}
-
+	r, err := e.Exec(query, todo.Title, todo.Status, todo.ID)
+	if err != nil {
 		return err
-	})
+	}
+
+	count, err := r.RowsAffected()
+	if err == nil && count == 0 {
+		err = sql.ErrNoRows
+	}
+	return err
 }
 
 // DeleteTodo deletes the Todo with the given ID.
-func DeleteTodo(db *DB, id string) error {
+func DeleteTodo(e sqlx.Ext, id string) error {
 	query := `delete from TODO where ID = ?`
 
-	return withTx(db, func(ext sqlx.Ext) error {
-		r, err := ext.Exec(query, id)
-		if err != nil {
-			return err
-		}
-
-		count, err := r.RowsAffected()
-		if err == nil && count == 0 {
-			err = sql.ErrNoRows
-		}
-
+	r, err := e.Exec(query, id)
+	if err != nil {
 		return err
-	})
+	}
+
+	count, err := r.RowsAffected()
+	if err == nil && count == 0 {
+		err = sql.ErrNoRows
+	}
+	return err
 }
