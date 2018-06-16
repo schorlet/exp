@@ -7,14 +7,14 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func TestBegin(t *testing.T) {
+func TestBeginError(t *testing.T) {
 	db := DB{
 		begin: func() (*Tx, error) {
 			return nil, fmt.Errorf("begin error")
 		},
 	}
 
-	err := withTx(&db, func(sqlx.Ext) error {
+	err := runTx(&db, func(sqlx.Ext) error {
 		return nil
 	})
 	if err == nil {
@@ -48,7 +48,7 @@ func TestCommit(t *testing.T) {
 	}
 	db := newTestDB(&tx)
 
-	err := withTx(db, func(sqlx.Ext) error {
+	err := runTx(db, func(sqlx.Ext) error {
 		return nil
 	})
 	if err != nil {
@@ -67,7 +67,7 @@ func TestCommitError(t *testing.T) {
 	}
 	db := newTestDB(&tx)
 
-	err := withTx(db, func(sqlx.Ext) error {
+	err := runTx(db, func(sqlx.Ext) error {
 		return nil
 	})
 	if err == nil {
@@ -78,7 +78,7 @@ func TestCommitError(t *testing.T) {
 		t.Fatalf("Expected multiErr")
 	}
 	if len(me.Errors) != 1 {
-		t.Fatalf("len(me): %d, want: 1", len(me.Errors))
+		t.Fatalf("Unexpected error count: %d", len(me.Errors))
 	}
 }
 
@@ -93,7 +93,7 @@ func TestRollback(t *testing.T) {
 	}
 	db := newTestDB(&tx)
 
-	err := withTx(db, func(sqlx.Ext) error {
+	err := runTx(db, func(sqlx.Ext) error {
 		return fmt.Errorf("fn error")
 	})
 	if err == nil {
@@ -104,7 +104,7 @@ func TestRollback(t *testing.T) {
 		t.Fatalf("Expected multiErr")
 	}
 	if len(me.Errors) != 1 {
-		t.Fatalf("len(me): %d, want: 1", len(me.Errors))
+		t.Fatalf("Unexpected error count: %d", len(me.Errors))
 	}
 	if !rollbacked {
 		t.Fatalf("Expected rollbacked")
@@ -119,7 +119,7 @@ func TestRollbackError(t *testing.T) {
 	}
 	db := newTestDB(&tx)
 
-	err := withTx(db, func(sqlx.Ext) error {
+	err := runTx(db, func(sqlx.Ext) error {
 		return fmt.Errorf("fn error")
 	})
 	if err == nil {
@@ -130,7 +130,7 @@ func TestRollbackError(t *testing.T) {
 		t.Fatalf("Expected multiErr")
 	}
 	if len(me.Errors) != 2 {
-		t.Fatalf("len(me): %d, want: 2", len(me.Errors))
+		t.Fatalf("Unexpected error count: %d", len(me.Errors))
 	}
 }
 
@@ -145,7 +145,7 @@ func TestPanic(t *testing.T) {
 	}
 	db := newTestDB(&tx)
 
-	err := withTx(db, func(sqlx.Ext) error {
+	err := runTx(db, func(sqlx.Ext) error {
 		panic("panic error")
 	})
 	if err == nil {
@@ -156,7 +156,7 @@ func TestPanic(t *testing.T) {
 		t.Fatalf("Expected multiErr")
 	}
 	if len(me.Errors) != 1 {
-		t.Fatalf("len(me): %d, want: 1", len(me.Errors))
+		t.Fatalf("Unexpected error count: %d", len(me.Errors))
 	}
 	if !rollbacked {
 		t.Fatalf("Expected rollbacked")
@@ -171,7 +171,7 @@ func TestPanicError(t *testing.T) {
 	}
 	db := newTestDB(&tx)
 
-	err := withTx(db, func(sqlx.Ext) error {
+	err := runTx(db, func(sqlx.Ext) error {
 		panic("panic error")
 	})
 	if err == nil {
@@ -182,6 +182,6 @@ func TestPanicError(t *testing.T) {
 		t.Fatalf("Expected multiErr")
 	}
 	if len(me.Errors) != 2 {
-		t.Fatalf("len(me): %d, want: 2", len(me.Errors))
+		t.Fatalf("Unexpected error count: %d", len(me.Errors))
 	}
 }

@@ -47,7 +47,7 @@ func (db *DB) Beginx() (*Tx, error) {
 	return &Tx{Tx: tx}, nil
 }
 
-func withTx(db *DB, fn func(sqlx.Ext) error) (rerr error) {
+func runTx(db *DB, fn func(sqlx.Ext) error) (rerr error) {
 	var errs multiErr
 	defer func() {
 		rerr = errs.orNil()
