@@ -7,11 +7,11 @@ import (
 
 // Todo struct
 type Todo struct {
-	ID      string    `db:"ID"`
-	Title   string    `db:"TITLE" `
-	Status  string    `db:"STATUS"`
-	Created time.Time `db:"CREATED"`
-	Updated time.Time `db:"UPDATED"`
+	ID      string    `json:"id"      db:"ID"`
+	Title   string    `json:"title"   db:"TITLE"`
+	Status  string    `json:"status"  db:"STATUS"`
+	Created time.Time `json:"created" db:"CREATED"`
+	Updated time.Time `json:"updated" db:"UPDATED"`
 }
 
 // Todos slice
