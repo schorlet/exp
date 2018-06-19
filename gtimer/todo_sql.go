@@ -79,7 +79,7 @@ func GetTodosByStatus(q sqlx.Queryer, status string) (Todos, error) {
 }
 
 // UpdateTodo updates the Title and Status of the given Todo.
-func UpdateTodo(e sqlx.Ext, todo Todo) error {
+func UpdateTodo(e sqlx.Execer, todo Todo) error {
 	query := `
 			update TODO set TITLE = ?, STATUS = ?
 			where ID = ?`
@@ -97,7 +97,7 @@ func UpdateTodo(e sqlx.Ext, todo Todo) error {
 }
 
 // DeleteTodo deletes the Todo with the given ID.
-func DeleteTodo(e sqlx.Ext, id string) error {
+func DeleteTodo(e sqlx.Execer, id string) error {
 	query := `delete from TODO where ID = ?`
 
 	r, err := e.Exec(query, id)
