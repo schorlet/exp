@@ -61,6 +61,7 @@ func (h *TodoHandler) GetTodos() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 		enc := json.NewEncoder(w)
 		enc.Encode(todos)
 	}
@@ -69,6 +70,7 @@ func (h *TodoHandler) GetTodos() http.HandlerFunc {
 func (h *TodoHandler) CreateTodo() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var body Todo
+
 		dec := json.NewDecoder(r.Body)
 		if err := dec.Decode(&body); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -80,6 +82,7 @@ func (h *TodoHandler) CreateTodo() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 		enc := json.NewEncoder(w)
 		enc.Encode(todo)
 	}
@@ -92,6 +95,7 @@ func (h *TodoHandler) GetTodo(id string) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 		enc := json.NewEncoder(w)
 		enc.Encode(todo)
 	}
@@ -107,17 +111,12 @@ func (h *TodoHandler) UpdateTodo(id string) http.HandlerFunc {
 		}
 
 		body.ID = id
-		err := UpdateTodo(h.DB, body)
+		todo, err := UpdateTodo(h.DB, body)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		todo, err := GetTodo(h.DB, id)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
 		enc := json.NewEncoder(w)
 		enc.Encode(todo)
 	}

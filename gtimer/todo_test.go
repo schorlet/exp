@@ -101,7 +101,7 @@ func TestUpdateTodo(t *testing.T) {
 		}
 
 		todo.Status = "completed"
-		err = UpdateTodo(db, todo)
+		todo, err = UpdateTodo(db, todo)
 		if err != nil {
 			t.Fatalf("Unable to update Todo: %v", err)
 		}
@@ -115,7 +115,7 @@ func TestUpdateTodo(t *testing.T) {
 		}
 
 		todo.Status = "foo"
-		err = UpdateTodo(db, todo)
+		todo, err = UpdateTodo(db, todo)
 		if err == nil {
 			t.Fatal("Expected error when updating Todo")
 		}
