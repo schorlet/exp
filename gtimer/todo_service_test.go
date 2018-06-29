@@ -6,22 +6,23 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func withDB(fn func(*DB, TodoStore)) {
+func withService(fn func(TodoService)) {
 	db := MustConnect(":memory:")
 	defer db.Close()
 	MustCreateSchema(db)
 
-	fn(db, TodoSqlite{})
+	service := TodoServiceSQL{DB: db, Todos: TodoSqlite{}}
+	fn(&service)
 }
 
 func TestCreateTodo(t *testing.T) {
-	withDB(func(db *DB, store TodoStore) {
-		create1, err := store.Create(db, Todo{Title: "st101"})
+	withService(func(service TodoService) {
+		create1, err := service.Create(Todo{Title: "st101"})
 		if err != nil {
 			t.Fatalf("Unable to create Todo: %v", err)
 		}
 
-		create2, err := store.Create(db, Todo{Title: "st101"})
+		create2, err := service.Create(Todo{Title: "st101"})
 		if err != nil {
 			t.Fatalf("Unable to create Todo: %v", err)
 		}
@@ -29,7 +30,7 @@ func TestCreateTodo(t *testing.T) {
 			t.Fatalf("Unexpected Todo ID: %s", create2.ID)
 		}
 
-		todos, err := store.Read(db, TodoFilter{})
+		todos, err := service.Read(TodoFilter{})
 		if err != nil {
 			t.Fatalf("Unable to get Todos: %v", err)
 		}
@@ -40,13 +41,13 @@ func TestCreateTodo(t *testing.T) {
 }
 
 func TestGetTodo(t *testing.T) {
-	withDB(func(db *DB, store TodoStore) {
-		create, err := store.Create(db, Todo{Title: "st101"})
+	withService(func(service TodoService) {
+		create, err := service.Create(Todo{Title: "st101"})
 		if err != nil {
 			t.Fatalf("Unable to create Todo: %v", err)
 		}
 
-		todos, err := store.Read(db, TodoFilter{ID: create.ID})
+		todos, err := service.Read(TodoFilter{ID: create.ID})
 		if err != nil {
 			t.Fatalf("Unable to get Todo: %v", err)
 		}
@@ -54,7 +55,7 @@ func TestGetTodo(t *testing.T) {
 			t.Fatalf("Unexpected count of Todos: %d", len(todos))
 		}
 
-		todos, err = store.Read(db, TodoFilter{ID: "0"})
+		todos, err = service.Read(TodoFilter{ID: "0"})
 		if err == nil {
 			t.Fatalf("Unexpected Todo: %v", todos)
 		}
@@ -62,18 +63,18 @@ func TestGetTodo(t *testing.T) {
 }
 
 func TestDeleteTodo(t *testing.T) {
-	withDB(func(db *DB, store TodoStore) {
-		create, err := store.Create(db, Todo{Title: "st101"})
+	withService(func(service TodoService) {
+		create, err := service.Create(Todo{Title: "st101"})
 		if err != nil {
 			t.Fatalf("Unable to create Todo: %v", err)
 		}
 
-		err = store.Delete(db, create.ID)
+		err = service.Delete(create.ID)
 		if err != nil {
 			t.Fatalf("Unable to delete Todo: %v", err)
 		}
 
-		err = store.Delete(db, "0")
+		err = service.Delete("0")
 		if err == nil {
 			t.Fatalf("Expected error when deleting Todo")
 		}
@@ -81,20 +82,20 @@ func TestDeleteTodo(t *testing.T) {
 }
 
 func TestUpdateTodo(t *testing.T) {
-	withDB(func(db *DB, store TodoStore) {
-		create, err := store.Create(db, Todo{Title: "st101"})
+	withService(func(service TodoService) {
+		create, err := service.Create(Todo{Title: "st101"})
 		if err != nil {
 			t.Fatalf("Unable to create Todo: %v", err)
 		}
 
 		create.Status = "completed"
-		update, err := store.Update(db, create)
+		update, err := service.Update(create)
 		if err != nil {
 			t.Fatalf("Unable to update Todo: %v", err)
 		}
 
 		update.Status = "foo"
-		update, err = store.Update(db, update)
+		update, err = service.Update(update)
 		if err == nil {
 			t.Fatal("Expected error when updating Todo")
 		}
