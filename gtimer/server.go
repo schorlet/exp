@@ -15,9 +15,11 @@ func NewServer(db *DB) http.Handler {
 }
 
 func handleAPI(db *DB) http.Handler {
+	todos := TodoServiceSQL{DB: db, Todos: TodoSqlite{}}
+	handler := TodoHandler{Todos: &todos}
+
 	mux := http.NewServeMux()
-	th := TodoHandler{DB: db}
-	mux.Handle("/todos/", &th)
+	mux.Handle("/todos/", &handler)
 	return mux
 }
 

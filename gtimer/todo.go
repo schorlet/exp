@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Todo struct
+// Todo struct.
 type Todo struct {
 	ID      string    `json:"id"      db:"ID"`
 	Title   string    `json:"title"   db:"TITLE"`
@@ -14,10 +14,16 @@ type Todo struct {
 	Updated time.Time `json:"updated" db:"UPDATED"`
 }
 
-// Todos slice
-type Todos []Todo
-
 func (t Todo) String() string {
 	return fmt.Sprintf("Todo{ID:%s, Title:%s, Status:%s, Created:%s, Updated:%s}",
 		t.ID, t.Title, t.Status, t.Created, t.Updated)
+}
+
+// Todos slice.
+type Todos []Todo
+
+// TodoFilter struct.
+type TodoFilter struct {
+	ID     string
+	Status string
 }

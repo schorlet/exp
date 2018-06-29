@@ -7,7 +7,7 @@ import (
 )
 
 type TodoHandler struct {
-	*DB
+	Todos TodoService
 }
 
 func notAllowed(allowed ...string) http.HandlerFunc {
@@ -22,7 +22,11 @@ func notAllowed(allowed ...string) http.HandlerFunc {
 }
 
 func (h *TodoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// shiftPath returned values:
+	// "todos", "/" := shiftPath(/todos/)
+	// "todos", "/:id" := shiftPath(/todos/:id)
 	_, tail := shiftPath(r.URL.Path)
+
 	var next http.Handler
 	var id string
 
@@ -30,21 +34,22 @@ func (h *TodoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/":
 		switch r.Method {
 		case "GET":
-			next = h.GetTodos()
+			next = h.GetMany()
 		case "POST":
-			next = h.CreateTodo()
+			next = h.Post()
 		default:
 			next = notAllowed("GET", "POST")
 		}
 	default:
+		// ":id", "/" := shiftPath(/:id)
 		id, _ = shiftPath(tail)
 		switch r.Method {
 		case "GET":
-			next = h.GetTodo(id)
+			next = h.Get(id)
 		case "PUT":
-			next = h.UpdateTodo(id)
+			next = h.Put(id)
 		case "DELETE":
-			next = h.DeleteTodo(id)
+			next = h.Delete(id)
 		default:
 			next = notAllowed("GET", "PUT", "DELETE")
 		}
@@ -53,10 +58,11 @@ func (h *TodoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	next.ServeHTTP(w, r)
 }
 
-func (h *TodoHandler) GetTodos() http.HandlerFunc {
+func (h *TodoHandler) GetMany() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// status := r.FormValue("status")
-		todos, err := GetTodos(h.DB)
+		filter := TodoFilter{Status: r.FormValue("status")}
+
+		todos, err := h.Todos.Read(filter)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -67,17 +73,17 @@ func (h *TodoHandler) GetTodos() http.HandlerFunc {
 	}
 }
 
-func (h *TodoHandler) CreateTodo() http.HandlerFunc {
+func (h *TodoHandler) Post() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var body Todo
+		var create Todo
 
 		dec := json.NewDecoder(r.Body)
-		if err := dec.Decode(&body); err != nil {
+		if err := dec.Decode(&create); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		todo, err := CreateTodo(h.DB, body.Title)
+		todo, err := h.Todos.Create(create)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -88,30 +94,33 @@ func (h *TodoHandler) CreateTodo() http.HandlerFunc {
 	}
 }
 
-func (h *TodoHandler) GetTodo(id string) http.HandlerFunc {
+func (h *TodoHandler) Get(id string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		todo, err := GetTodo(h.DB, id)
+		filter := TodoFilter{ID: id}
+
+		todos, err := h.Todos.Read(filter)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		enc := json.NewEncoder(w)
-		enc.Encode(todo)
+		enc.Encode(todos[0])
 	}
 }
 
-func (h *TodoHandler) UpdateTodo(id string) http.HandlerFunc {
+func (h *TodoHandler) Put(id string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var body Todo
+		var update Todo
+
 		dec := json.NewDecoder(r.Body)
-		if err := dec.Decode(&body); err != nil {
+		if err := dec.Decode(&update); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		body.ID = id
-		todo, err := UpdateTodo(h.DB, body)
+		update.ID = id
+		todo, err := h.Todos.Update(update)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -122,12 +131,11 @@ func (h *TodoHandler) UpdateTodo(id string) http.HandlerFunc {
 	}
 }
 
-func (h *TodoHandler) DeleteTodo(id string) http.HandlerFunc {
+func (h *TodoHandler) Delete(id string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := DeleteTodo(h.DB, id)
+		err := h.Todos.Delete(id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
 		}
 	}
 }
