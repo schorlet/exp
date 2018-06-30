@@ -1,4 +1,4 @@
-package gtimer
+package sql
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ func TestBeginError(t *testing.T) {
 		},
 	}
 
-	err := runTx(&db, func(sqlx.Ext) error {
+	err := RunTx(&db, func(sqlx.Ext) error {
 		return nil
 	})
 	if err == nil {
@@ -48,7 +48,7 @@ func TestCommit(t *testing.T) {
 	}
 	db := newTestDB(&tx)
 
-	err := runTx(db, func(sqlx.Ext) error {
+	err := RunTx(db, func(sqlx.Ext) error {
 		return nil
 	})
 	if err != nil {
@@ -67,7 +67,7 @@ func TestCommitError(t *testing.T) {
 	}
 	db := newTestDB(&tx)
 
-	err := runTx(db, func(sqlx.Ext) error {
+	err := RunTx(db, func(sqlx.Ext) error {
 		return nil
 	})
 	if err == nil {
@@ -93,7 +93,7 @@ func TestRollback(t *testing.T) {
 	}
 	db := newTestDB(&tx)
 
-	err := runTx(db, func(sqlx.Ext) error {
+	err := RunTx(db, func(sqlx.Ext) error {
 		return fmt.Errorf("fn error")
 	})
 	if err == nil {
@@ -119,7 +119,7 @@ func TestRollbackError(t *testing.T) {
 	}
 	db := newTestDB(&tx)
 
-	err := runTx(db, func(sqlx.Ext) error {
+	err := RunTx(db, func(sqlx.Ext) error {
 		return fmt.Errorf("fn error")
 	})
 	if err == nil {
@@ -145,7 +145,7 @@ func TestPanic(t *testing.T) {
 	}
 	db := newTestDB(&tx)
 
-	err := runTx(db, func(sqlx.Ext) error {
+	err := RunTx(db, func(sqlx.Ext) error {
 		panic("panic error")
 	})
 	if err == nil {
@@ -171,7 +171,7 @@ func TestPanicError(t *testing.T) {
 	}
 	db := newTestDB(&tx)
 
-	err := runTx(db, func(sqlx.Ext) error {
+	err := RunTx(db, func(sqlx.Ext) error {
 		panic("panic error")
 	})
 	if err == nil {

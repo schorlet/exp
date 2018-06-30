@@ -3,6 +3,8 @@ package gtimer
 import (
 	"fmt"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // Todo struct.
@@ -26,4 +28,20 @@ type Todos []Todo
 type TodoFilter struct {
 	ID     string
 	Status string
+}
+
+// TodoService interface.
+type TodoService interface {
+	Create(create Todo) (Todo, error)
+	Read(filter TodoFilter) (Todos, error)
+	Update(update Todo) (Todo, error)
+	Delete(id string) error
+}
+
+// TodoStore interface.
+type TodoStore interface {
+	Create(e sqlx.Ext, create Todo) (Todo, error)
+	Read(q sqlx.Queryer, filter TodoFilter) (Todos, error)
+	Update(e sqlx.Ext, update Todo) (Todo, error)
+	Delete(e sqlx.Ext, id string) error
 }

@@ -1,4 +1,4 @@
-package gtimer
+package sql
 
 import "fmt"
 

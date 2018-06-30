@@ -1,10 +1,17 @@
-package gtimer
+// Package sql provides RunTx func to run a function in a transaction.
+package sql
 
 import (
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
 )
+
+// MustConnect connects to the datasource or panics on error.
+func MustConnect(driver, datasource string) *DB {
+	db := sqlx.MustConnect(driver, datasource)
+	return &DB{DB: db}
+}
 
 // Tx is a wrapper around sqlx.Tx.
 type Tx struct {
@@ -47,7 +54,8 @@ func (db *DB) Beginx() (*Tx, error) {
 	return &Tx{Tx: tx}, nil
 }
 
-func runTx(db *DB, fn func(sqlx.Ext) error) (rerr error) {
+// RunTx runs a function in a transaction.
+func RunTx(db *DB, fn func(sqlx.Ext) error) (rerr error) {
 	var errs multiErr
 	defer func() {
 		rerr = errs.orNil()

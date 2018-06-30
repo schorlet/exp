@@ -1,13 +1,21 @@
-package gtimer
+package http
 
 import (
 	"encoding/json"
 	"net/http"
+	"path"
 	"strings"
+
+	"github.com/schorlet/exp/gtimer"
 )
 
-type TodoHandler struct {
-	Todos TodoService
+func shiftPath(p string) (head, tail string) {
+	p = path.Clean("/" + p)
+	i := strings.Index(p[1:], "/") + 1
+	if i <= 0 {
+		return p[1:], "/"
+	}
+	return p[1:i], p[i:]
 }
 
 func notAllowed(allowed ...string) http.HandlerFunc {
@@ -19,6 +27,11 @@ func notAllowed(allowed ...string) http.HandlerFunc {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	}
+}
+
+// TodoHandler struct
+type TodoHandler struct {
+	Todos gtimer.TodoService
 }
 
 func (h *TodoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -58,24 +71,10 @@ func (h *TodoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	next.ServeHTTP(w, r)
 }
 
-func (h *TodoHandler) GetMany() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		filter := TodoFilter{Status: r.FormValue("status")}
-
-		todos, err := h.Todos.Read(filter)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		enc := json.NewEncoder(w)
-		enc.Encode(todos)
-	}
-}
-
+// Post
 func (h *TodoHandler) Post() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var create Todo
+		var create gtimer.Todo
 
 		dec := json.NewDecoder(r.Body)
 		if err := dec.Decode(&create); err != nil {
@@ -94,9 +93,26 @@ func (h *TodoHandler) Post() http.HandlerFunc {
 	}
 }
 
+// GetMany
+func (h *TodoHandler) GetMany() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		filter := gtimer.TodoFilter{Status: r.FormValue("status")}
+
+		todos, err := h.Todos.Read(filter)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		enc := json.NewEncoder(w)
+		enc.Encode(todos)
+	}
+}
+
+// Get
 func (h *TodoHandler) Get(id string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		filter := TodoFilter{ID: id}
+		filter := gtimer.TodoFilter{ID: id}
 
 		todos, err := h.Todos.Read(filter)
 		if err != nil {
@@ -109,9 +125,10 @@ func (h *TodoHandler) Get(id string) http.HandlerFunc {
 	}
 }
 
+// Put
 func (h *TodoHandler) Put(id string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var update Todo
+		var update gtimer.Todo
 
 		dec := json.NewDecoder(r.Body)
 		if err := dec.Decode(&update); err != nil {
@@ -131,6 +148,7 @@ func (h *TodoHandler) Put(id string) http.HandlerFunc {
 	}
 }
 
+// Delete
 func (h *TodoHandler) Delete(id string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := h.Todos.Delete(id)

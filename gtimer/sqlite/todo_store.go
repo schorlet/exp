@@ -1,4 +1,4 @@
-package gtimer
+package sqlite
 
 import (
 	"crypto/rand"
@@ -7,22 +7,39 @@ import (
 	"io"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/schorlet/exp/gtimer"
 )
 
-// TodoStore interface.
-type TodoStore interface {
-	Create(e sqlx.Ext, create Todo) (Todo, error)
-	Read(q sqlx.Queryer, filter TodoFilter) (Todos, error)
-	Update(e sqlx.Ext, update Todo) (Todo, error)
-	Delete(e sqlx.Ext, id string) error
+const todoSchema = `
+	drop index if exists TODO_IDX_STATUS;
+	drop table if exists TODO;
+
+	create table TODO (
+		ID      text   	  primary key,
+		TITLE   text      not null,
+		STATUS  text      not null default 'active',
+		CREATED datetime  not null default current_timestamp,
+		UPDATED datetime  not null default current_timestamp,
+		check (STATUS in ('active', 'completed'))
+	);
+
+	create index TODO_IDX_STATUS on TODO (STATUS);
+`
+
+// TodoStore implements #gtimer.TodoStore.
+type TodoStore struct {
 }
 
-// TodoSqlite type.
-type TodoSqlite struct {
+// MustDefine creates the Todo schema or panics on error.
+func (TodoStore) MustDefine(e sqlx.Ext) {
+	_, err := e.Exec(todoSchema)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Create creates a Todo.
-func (sqlite TodoSqlite) Create(e sqlx.Ext, create Todo) (Todo, error) {
+func (store TodoStore) Create(e sqlx.Ext, create gtimer.Todo) (gtimer.Todo, error) {
 	query := `
 			insert into TODO (ID, TITLE)
 			values (?, ?)`
@@ -40,7 +57,7 @@ func (sqlite TodoSqlite) Create(e sqlx.Ext, create Todo) (Todo, error) {
 		return create, err
 	}
 
-	return sqlite.Get(e, create.ID)
+	return store.Get(e, create.ID)
 }
 
 func randomString(length int) (string, error) {
@@ -54,58 +71,60 @@ func randomString(length int) (string, error) {
 }
 
 // Read returns all Todos with the specified filter.
-func (sqlite TodoSqlite) Read(q sqlx.Queryer, filter TodoFilter) (Todos, error) {
+// Read returns database/sql/#ErrNoRows when filtering by ID and when the expected Todo is not found.
+// Otherwise the returned Todos may be empty and err be nil.
+func (store TodoStore) Read(q sqlx.Queryer, filter gtimer.TodoFilter) (gtimer.Todos, error) {
 	if filter.ID != "" {
-		todo, err := sqlite.Get(q, filter.ID)
-		return Todos{todo}, err
+		todo, err := store.Get(q, filter.ID)
+		return gtimer.Todos{todo}, err
 	}
 	if filter.Status != "" {
-		return sqlite.ByStatus(q, filter.Status)
+		return store.ByStatus(q, filter.Status)
 	}
-	return sqlite.All(q)
+	return store.All(q)
 }
 
 // Get returns the Todo with the given ID.
-func (TodoSqlite) Get(q sqlx.Queryer, id string) (Todo, error) {
+func (TodoStore) Get(q sqlx.Queryer, id string) (gtimer.Todo, error) {
 	query := `
 			select ID, TITLE, STATUS, CREATED, UPDATED
 			from TODO
 			where id = ?`
 
-	var todo Todo
+	var todo gtimer.Todo
 	err := sqlx.Get(q, &todo, query, id)
 	return todo, err
 }
 
 // ByStatus returns all Todos with the specified Status.
-func (TodoSqlite) ByStatus(q sqlx.Queryer, status string) (Todos, error) {
+func (TodoStore) ByStatus(q sqlx.Queryer, status string) (gtimer.Todos, error) {
 	query := `
 			select ID, TITLE, STATUS, CREATED, UPDATED
 			from TODO
 			where STATUS = ?
 			order by CREATED desc, TITLE asc`
 
-	var todos Todos
+	var todos gtimer.Todos
 	err := sqlx.Select(q, &todos, query, status)
 
 	return todos, err
 }
 
 // All returns all Todos.
-func (TodoSqlite) All(q sqlx.Queryer) (Todos, error) {
+func (TodoStore) All(q sqlx.Queryer) (gtimer.Todos, error) {
 	query := `
 			select ID, TITLE, STATUS, CREATED, UPDATED
 			from TODO
 			order by CREATED desc, TITLE asc`
 
-	var todos Todos
+	var todos gtimer.Todos
 	err := sqlx.Select(q, &todos, query)
 
 	return todos, err
 }
 
 // Update updates the Title and Status of the Todo with the given ID.
-func (sqlite TodoSqlite) Update(e sqlx.Ext, update Todo) (Todo, error) {
+func (store TodoStore) Update(e sqlx.Ext, update gtimer.Todo) (gtimer.Todo, error) {
 	query := `
 			update TODO set TITLE = ?,
 							STATUS = ?,
@@ -122,11 +141,11 @@ func (sqlite TodoSqlite) Update(e sqlx.Ext, update Todo) (Todo, error) {
 		return update, sql.ErrNoRows
 	}
 
-	return sqlite.Get(e, update.ID)
+	return store.Get(e, update.ID)
 }
 
 // Delete deletes the Todo with the given ID.
-func (TodoSqlite) Delete(e sqlx.Ext, id string) error {
+func (TodoStore) Delete(e sqlx.Ext, id string) error {
 	query := `delete from TODO where ID = ?`
 
 	r, err := e.Exec(query, id)
