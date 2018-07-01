@@ -63,6 +63,9 @@ func TestReadTodo(t *testing.T) {
 		if err == nil {
 			t.Fatalf("Unexpected Todo: %v", todos)
 		}
+		if len(todos) != 0 {
+			t.Fatalf("Unexpected count of Todos: %d", len(todos))
+		}
 
 		todos, err = store.Read(db, gtimer.TodoFilter{Status: create.Status})
 		if err != nil {

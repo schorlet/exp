@@ -76,6 +76,9 @@ func randomString(length int) (string, error) {
 func (store TodoStore) Read(q sqlx.Queryer, filter gtimer.TodoFilter) (gtimer.Todos, error) {
 	if filter.ID != "" {
 		todo, err := store.Get(q, filter.ID)
+		if err != nil {
+			return gtimer.Todos{}, err
+		}
 		return gtimer.Todos{todo}, err
 	}
 	if filter.Status != "" {
