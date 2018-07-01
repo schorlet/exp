@@ -1,13 +1,11 @@
 package sqlite
 
 import (
-	"crypto/rand"
 	"database/sql"
-	"encoding/base64"
-	"io"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/schorlet/exp/gtimer"
+	"github.com/schorlet/exp/gtimer/storage"
 )
 
 const todoSchema = `
@@ -30,6 +28,8 @@ const todoSchema = `
 type TodoStore struct {
 }
 
+var _ gtimer.TodoStore = TodoStore{}
+
 // MustDefine creates the Todo schema or panics on error.
 func (TodoStore) MustDefine(e sqlx.Ext) {
 	_, err := e.Exec(todoSchema)
@@ -46,7 +46,7 @@ func (store TodoStore) Create(e sqlx.Ext, create gtimer.Todo) (gtimer.Todo, erro
 
 	if create.ID == "" {
 		var err error
-		create.ID, err = randomString(12)
+		create.ID, err = storage.RandomString(12)
 		if err != nil {
 			return create, err
 		}
@@ -58,16 +58,6 @@ func (store TodoStore) Create(e sqlx.Ext, create gtimer.Todo) (gtimer.Todo, erro
 	}
 
 	return store.Get(e, create.ID)
-}
-
-func randomString(length int) (string, error) {
-	// https://www.commandlinefu.com/commands/view/24071/generate-random-text-based-on-length
-	raw := make([]byte, length)
-	_, err := io.ReadFull(rand.Reader, raw)
-	if err != nil {
-		return "", err
-	}
-	return base64.URLEncoding.EncodeToString(raw)[:length], nil
 }
 
 // Read returns all Todos with the specified filter.

@@ -10,7 +10,7 @@ import (
 	"github.com/schorlet/exp/gtimer"
 	"github.com/schorlet/exp/gtimer/http"
 	"github.com/schorlet/exp/gtimer/server"
-	"github.com/schorlet/exp/gtimer/sqlite"
+	"github.com/schorlet/exp/gtimer/storage/sqlite"
 	"github.com/schorlet/exp/sql"
 )
 

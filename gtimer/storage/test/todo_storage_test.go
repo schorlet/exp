@@ -1,4 +1,4 @@
-package sqlite
+package test
 
 import (
 	"testing"
@@ -6,6 +6,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/schorlet/exp/gtimer"
+	"github.com/schorlet/exp/gtimer/storage/mem"
+	"github.com/schorlet/exp/gtimer/storage/sqlite"
 	"github.com/schorlet/exp/sql"
 )
 
@@ -13,10 +15,14 @@ func withDB(fn func(*sql.DB, gtimer.TodoStore)) {
 	db := sql.MustConnect("sqlite3", ":memory:")
 	defer db.Close()
 
-	store := TodoStore{}
-	store.MustDefine(db)
+	sqlStore := sqlite.TodoStore{}
+	sqlStore.MustDefine(db)
 
-	fn(db, &store)
+	memStore := mem.TodoStore{}
+
+	for _, store := range []gtimer.TodoStore{sqlStore, memStore} {
+		fn(db, store)
+	}
 }
 
 func TestCreateTodo(t *testing.T) {
@@ -24,6 +30,9 @@ func TestCreateTodo(t *testing.T) {
 		create1, err := store.Create(db, gtimer.Todo{Title: "st101"})
 		if err != nil {
 			t.Fatalf("Unable to create Todo: %v", err)
+		}
+		if create1.Status != "active" {
+			t.Fatalf("Unexpected Todo Status: %s", create1.Status)
 		}
 
 		create2, err := store.Create(db, gtimer.Todo{Title: "st101"})
@@ -75,9 +84,12 @@ func TestReadTodo(t *testing.T) {
 			t.Fatalf("Unexpected count of Todos: %d", len(todos))
 		}
 
-		_, err = store.Read(db, gtimer.TodoFilter{Status: "foo"})
+		todos, err = store.Read(db, gtimer.TodoFilter{Status: "foo"})
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
+		}
+		if len(todos) != 0 {
+			t.Fatalf("Unexpected count of Todos: %d", len(todos))
 		}
 	})
 }
