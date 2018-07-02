@@ -13,6 +13,8 @@ type TodoService struct {
 	Store gtimer.TodoStore
 }
 
+var _ gtimer.TodoService = new(TodoService)
+
 func (todos *TodoService) Create(create gtimer.Todo) (gtimer.Todo, error) {
 	return todos.Store.Create(todos.DB, create)
 }

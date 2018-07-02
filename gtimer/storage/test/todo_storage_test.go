@@ -15,10 +15,10 @@ func withDB(fn func(*sql.DB, gtimer.TodoStore)) {
 	db := sql.MustConnect("sqlite3", ":memory:")
 	defer db.Close()
 
-	sqlStore := sqlite.TodoStore{}
+	var sqlStore sqlite.TodoStore
 	sqlStore.MustDefine(db)
 
-	memStore := mem.TodoStore{}
+	memStore := make(mem.TodoStore)
 
 	for _, store := range []gtimer.TodoStore{sqlStore, memStore} {
 		fn(db, store)

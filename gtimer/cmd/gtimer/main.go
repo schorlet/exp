@@ -26,7 +26,7 @@ func main() {
 	defer db.Close()
 
 	// storage
-	store := sqlite.TodoStore{}
+	var store sqlite.TodoStore
 	store.MustDefine(db)
 
 	// service

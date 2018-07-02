@@ -12,7 +12,7 @@ import (
 // TodoStore implements exp/gtimer#TodoStore.
 type TodoStore map[string]gtimer.Todo
 
-var _ gtimer.TodoStore = TodoStore{}
+var _ gtimer.TodoStore = make(TodoStore)
 
 func (store TodoStore) Create(_ sqlx.Ext, create gtimer.Todo) (gtimer.Todo, error) {
 	if create.ID == "" {
