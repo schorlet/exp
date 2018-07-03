@@ -72,6 +72,9 @@ func TestReadTodo(t *testing.T) {
 		if err == nil {
 			t.Fatalf("Unexpected Todo: %v", todos)
 		}
+		if err != gtimer.ErrNotFound {
+			t.Fatalf("Unexpected error: %v", err)
+		}
 		if len(todos) != 0 {
 			t.Fatalf("Unexpected count of Todos: %d", len(todos))
 		}
@@ -112,6 +115,16 @@ func TestUpdateTodo(t *testing.T) {
 		if err == nil {
 			t.Fatal("Expected error when updating Todo")
 		}
+
+		update.ID = "0"
+		create.Status = "active"
+		_, err = store.Update(db, update)
+		if err == nil {
+			t.Fatal("Expected error when updating Todo")
+		}
+		if err != gtimer.ErrNotFound {
+			t.Fatalf("Unexpected error: %v", err)
+		}
 	})
 }
 
@@ -130,6 +143,9 @@ func TestDeleteTodo(t *testing.T) {
 		err = store.Delete(db, "0")
 		if err == nil {
 			t.Fatalf("Expected error when deleting Todo")
+		}
+		if err != gtimer.ErrNotFound {
+			t.Fatalf("Unexpected error: %v", err)
 		}
 	})
 }

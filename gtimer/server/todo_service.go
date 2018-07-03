@@ -5,8 +5,6 @@ import (
 	"github.com/schorlet/exp/sql"
 )
 
-// ErrNotFound
-
 // TodoService implements #gtimer.TodoService.
 type TodoService struct {
 	DB    *sql.DB

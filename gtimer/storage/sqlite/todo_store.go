@@ -86,6 +86,9 @@ func (TodoStore) Get(q sqlx.Queryer, id string) (gtimer.Todo, error) {
 
 	var todo gtimer.Todo
 	err := sqlx.Get(q, &todo, query, id)
+	if err == sql.ErrNoRows {
+		err = gtimer.ErrNotFound
+	}
 	return todo, err
 }
 
@@ -131,7 +134,7 @@ func (store TodoStore) Update(e sqlx.Ext, update gtimer.Todo) (gtimer.Todo, erro
 
 	count, err := r.RowsAffected()
 	if err == nil && count == 0 {
-		return update, sql.ErrNoRows
+		return update, gtimer.ErrNotFound
 	}
 
 	return store.Get(e, update.ID)
@@ -148,7 +151,7 @@ func (TodoStore) Delete(e sqlx.Ext, id string) error {
 
 	count, err := r.RowsAffected()
 	if err == nil && count == 0 {
-		err = sql.ErrNoRows
+		err = gtimer.ErrNotFound
 	}
 	return err
 }

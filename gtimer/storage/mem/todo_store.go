@@ -49,7 +49,7 @@ func (store TodoStore) Get(id string) (gtimer.Todo, error) {
 	if todo, ok := store[id]; ok {
 		return todo, nil
 	}
-	return gtimer.Todo{}, fmt.Errorf("id not found: %s", id)
+	return gtimer.Todo{}, gtimer.ErrNotFound
 }
 
 func (store TodoStore) ByStatus(status string) (gtimer.Todos, error) {
@@ -75,7 +75,7 @@ func (store TodoStore) All() (gtimer.Todos, error) {
 func (store TodoStore) Update(_ sqlx.Ext, update gtimer.Todo) (gtimer.Todo, error) {
 	todo, err := store.Get(update.ID)
 	if err != nil {
-		return gtimer.Todo{}, fmt.Errorf("mem update: %v", err)
+		return gtimer.Todo{}, err
 	}
 	if update.Status != "completed" && update.Status != "active" {
 		return gtimer.Todo{}, fmt.Errorf("invalid status: %s", update.Status)
@@ -89,7 +89,7 @@ func (store TodoStore) Update(_ sqlx.Ext, update gtimer.Todo) (gtimer.Todo, erro
 
 func (store TodoStore) Delete(_ sqlx.Ext, id string) error {
 	if _, err := store.Get(id); err != nil {
-		return fmt.Errorf("mem delete: %v", err)
+		return err
 	}
 	delete(store, id)
 	return nil
