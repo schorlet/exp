@@ -1,10 +1,11 @@
 package http
 
 import (
-	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"mime"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -25,19 +26,33 @@ func withHandler(fn func(h http.Handler)) {
 	fn(&handler)
 }
 
+func hasJSON(header http.Header) error {
+	format := header.Get("Content-Type")
+	mediatype, _, err := mime.ParseMediaType(format)
+	if err != nil {
+		return fmt.Errorf("parsing media type: %v", err)
+	}
+	if mediatype != "application/json" {
+		return fmt.Errorf("invalid media type: %s", mediatype)
+	}
+	return nil
+}
+
 func TestTodoGetMany(t *testing.T) {
 	withHandler(func(h http.Handler) {
 		r, _ := http.NewRequest("GET", "/todos", nil)
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 
-		resp := w.Result()
-		if resp.StatusCode != http.StatusOK {
-			t.Fatalf("Unexpected status: %d %s", resp.StatusCode, resp.Status)
+		if w.Code != http.StatusOK {
+			t.Fatalf("Unexpected status code: %d", w.Code)
+		}
+		if err := hasJSON(w.HeaderMap); err != nil {
+			t.Fatalf("Unexpected content-type: %v", err)
 		}
 
 		var todos gtimer.Todos
-		dec := json.NewDecoder(resp.Body)
+		dec := json.NewDecoder(w.Body)
 		if err := dec.Decode(&todos); err != nil {
 			t.Fatalf("Unable to decode body: %v", err)
 		}
@@ -47,33 +62,26 @@ func TestTodoGetMany(t *testing.T) {
 	})
 }
 
-func TestTodoGetOne(t *testing.T) {
+func TestTodoGet(t *testing.T) {
 	withHandler(func(h http.Handler) {
 		r, _ := http.NewRequest("GET", "/todos/st101", nil)
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 
-		resp := w.Result()
-		if resp.StatusCode != http.StatusOK {
-			t.Fatalf("Unexpected status code: %d", resp.StatusCode)
+		if w.Code != http.StatusOK {
+			t.Fatalf("Unexpected status code: %d", w.Code)
+		}
+		if err := hasJSON(w.HeaderMap); err != nil {
+			t.Fatalf("Unexpected content-type: %v", err)
 		}
 
 		var todo gtimer.Todo
-		dec := json.NewDecoder(resp.Body)
+		dec := json.NewDecoder(w.Body)
 		if err := dec.Decode(&todo); err != nil {
 			t.Fatalf("Unable to decode body: %v", err)
 		}
 		if todo.ID != "st101" {
 			t.Fatalf("Unexpected todo: %s", todo)
-		}
-
-		var b bytes.Buffer
-		n, err := io.Copy(&b, resp.Body)
-		if err != nil {
-			t.Fatalf("Unexpected error: %v", err)
-		}
-		if n != 0 {
-			t.Fatalf("Unexpected read: %s", b.String())
 		}
 	})
 }
@@ -84,14 +92,8 @@ func TestTodoGetNotFound(t *testing.T) {
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 
-		resp := w.Result()
-		if resp.StatusCode != http.StatusNotFound {
-			t.Fatalf("Unexpected status code: %d", resp.StatusCode)
-		}
-
-		_, err := io.Copy(ioutil.Discard, resp.Body)
-		if err != nil {
-			t.Fatalf("Unexpected error: %v", err)
+		if w.Code != http.StatusNotFound {
+			t.Fatalf("Unexpected status code: %d", w.Code)
 		}
 	})
 }

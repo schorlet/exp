@@ -89,6 +89,7 @@ func (h *TodoHandler) Post() http.HandlerFunc {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		enc := json.NewEncoder(w)
 		enc.Encode(todo)
 	}
@@ -106,6 +107,7 @@ func (h *TodoHandler) GetMany() http.HandlerFunc {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		enc := json.NewEncoder(w)
 		enc.Encode(todos)
 	}
@@ -128,6 +130,7 @@ func (h *TodoHandler) Get(id string) http.HandlerFunc {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		enc := json.NewEncoder(w)
 		enc.Encode(todos[0])
 	}
@@ -157,6 +160,7 @@ func (h *TodoHandler) Put(id string) http.HandlerFunc {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		enc := json.NewEncoder(w)
 		enc.Encode(todo)
 	}
