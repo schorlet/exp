@@ -29,7 +29,7 @@ func notAllowed(allowed ...string) http.HandlerFunc {
 	}
 }
 
-// TodoHandler struct
+// TodoHandler handles Todos manipulation via an HTTP server.
 type TodoHandler struct {
 	Todos gtimer.TodoService
 }
@@ -71,7 +71,8 @@ func (h *TodoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	next.ServeHTTP(w, r)
 }
 
-// Post
+// Post accepts a Todo encoded in JSON in the request body, saves it
+// and returns it in the response body encoded in JSON.
 func (h *TodoHandler) Post() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var create gtimer.Todo
@@ -93,7 +94,8 @@ func (h *TodoHandler) Post() http.HandlerFunc {
 	}
 }
 
-// GetMany
+// GetMany selects the Todos according to the TodoFilter
+// and returns them in the response body encoded in JSON.
 func (h *TodoHandler) GetMany() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filter := gtimer.TodoFilter{Status: r.FormValue("status")}
@@ -109,14 +111,20 @@ func (h *TodoHandler) GetMany() http.HandlerFunc {
 	}
 }
 
-// Get
+// Get selects the Todo by its ID and returns it in the response body encoded in JSON.
+// A 404 error is returned if the Todo does not exist.
 func (h *TodoHandler) Get(id string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filter := gtimer.TodoFilter{ID: id}
 
 		todos, err := h.Todos.Read(filter)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			switch err {
+			case gtimer.ErrNotFound:
+				http.Error(w, err.Error(), http.StatusNotFound)
+			default:
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
 			return
 		}
 
@@ -125,7 +133,8 @@ func (h *TodoHandler) Get(id string) http.HandlerFunc {
 	}
 }
 
-// Put
+// Put handles the update of the Todo designated by the ID.
+// A 404 error is returned if the Todo does not exist.
 func (h *TodoHandler) Put(id string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var update gtimer.Todo
@@ -139,7 +148,12 @@ func (h *TodoHandler) Put(id string) http.HandlerFunc {
 		update.ID = id
 		todo, err := h.Todos.Update(update)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			switch err {
+			case gtimer.ErrNotFound:
+				http.Error(w, err.Error(), http.StatusNotFound)
+			default:
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
 			return
 		}
 
@@ -148,12 +162,18 @@ func (h *TodoHandler) Put(id string) http.HandlerFunc {
 	}
 }
 
-// Delete
+// Delete handles the deletion of the Todo designated by the ID.
+// A 404 error is returned if the Todo does not exist.
 func (h *TodoHandler) Delete(id string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := h.Todos.Delete(id)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			switch err {
+			case gtimer.ErrNotFound:
+				http.Error(w, err.Error(), http.StatusNotFound)
+			default:
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
 		}
 	}
 }
