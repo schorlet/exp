@@ -1,13 +1,13 @@
 package server
 
 import (
+	"github.com/jmoiron/sqlx"
 	"github.com/schorlet/exp/gtimer"
-	"github.com/schorlet/exp/sql"
 )
 
 // TodoService implements #gtimer.TodoService.
 type TodoService struct {
-	DB    *sql.DB
+	DB    *sqlx.DB
 	Store gtimer.TodoStore
 }
 

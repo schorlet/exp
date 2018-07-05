@@ -3,16 +3,16 @@ package test
 import (
 	"testing"
 
+	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/schorlet/exp/gtimer"
 	"github.com/schorlet/exp/gtimer/storage/mem"
 	"github.com/schorlet/exp/gtimer/storage/sqlite"
-	"github.com/schorlet/exp/sql"
 )
 
-func withDB(fn func(*sql.DB, gtimer.TodoStore)) {
-	db := sql.MustConnect("sqlite3", ":memory:")
+func withDB(fn func(*sqlx.DB, gtimer.TodoStore)) {
+	db := sqlx.MustConnect("sqlite3", ":memory:")
 	defer db.Close()
 
 	var sqlStore sqlite.TodoStore
@@ -26,7 +26,7 @@ func withDB(fn func(*sql.DB, gtimer.TodoStore)) {
 }
 
 func TestCreateTodo(t *testing.T) {
-	withDB(func(db *sql.DB, store gtimer.TodoStore) {
+	withDB(func(db *sqlx.DB, store gtimer.TodoStore) {
 		create1, err := store.Create(db, gtimer.Todo{Title: "st101"})
 		if err != nil {
 			t.Fatalf("Unable to create Todo: %v", err)
@@ -54,7 +54,7 @@ func TestCreateTodo(t *testing.T) {
 }
 
 func TestReadTodo(t *testing.T) {
-	withDB(func(db *sql.DB, store gtimer.TodoStore) {
+	withDB(func(db *sqlx.DB, store gtimer.TodoStore) {
 		create, err := store.Create(db, gtimer.Todo{Title: "st101"})
 		if err != nil {
 			t.Fatalf("Unable to create Todo: %v", err)
@@ -98,7 +98,7 @@ func TestReadTodo(t *testing.T) {
 }
 
 func TestUpdateTodo(t *testing.T) {
-	withDB(func(db *sql.DB, store gtimer.TodoStore) {
+	withDB(func(db *sqlx.DB, store gtimer.TodoStore) {
 		create, err := store.Create(db, gtimer.Todo{Title: "st101"})
 		if err != nil {
 			t.Fatalf("Unable to create Todo: %v", err)
@@ -129,7 +129,7 @@ func TestUpdateTodo(t *testing.T) {
 }
 
 func TestDeleteTodo(t *testing.T) {
-	withDB(func(db *sql.DB, store gtimer.TodoStore) {
+	withDB(func(db *sqlx.DB, store gtimer.TodoStore) {
 		create, err := store.Create(db, gtimer.Todo{Title: "st101"})
 		if err != nil {
 			t.Fatalf("Unable to create Todo: %v", err)

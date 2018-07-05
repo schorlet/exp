@@ -5,13 +5,13 @@ import (
 	"log"
 	"os"
 
+	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/schorlet/exp/gtimer"
 	"github.com/schorlet/exp/gtimer/http"
 	"github.com/schorlet/exp/gtimer/server"
 	"github.com/schorlet/exp/gtimer/storage/sqlite"
-	"github.com/schorlet/exp/sql"
 )
 
 func main() {
@@ -22,7 +22,7 @@ func main() {
 	if url == "" {
 		url = ":memory:"
 	}
-	db := sql.MustConnect("sqlite3", url)
+	db := sqlx.MustConnect("sqlite3", url)
 	defer db.Close()
 
 	// storage
