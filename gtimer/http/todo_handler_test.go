@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -38,6 +39,45 @@ func hasJSON(header http.Header) error {
 	return nil
 }
 
+func TestTodoPost(t *testing.T) {
+	withHandler(func(h http.Handler) {
+		create := gtimer.Todo{Title: "st103"}
+		buf, _ := json.Marshal(create)
+
+		r, _ := http.NewRequest("POST", "/todos", bytes.NewReader(buf))
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Unexpected status code: %d", w.Code)
+		}
+		if err := hasJSON(w.HeaderMap); err != nil {
+			t.Fatalf("Unexpected content type: %v", err)
+		}
+
+		dec := json.NewDecoder(w.Body)
+		dec.DisallowUnknownFields()
+		if err := dec.Decode(&create); err != nil {
+			t.Fatalf("Unable to decode body: %v", err)
+		}
+	})
+}
+
+func TestTodoPostBadRequest(t *testing.T) {
+	withHandler(func(h http.Handler) {
+		create := struct{ Foo string }{"foo"}
+		buf, _ := json.Marshal(create)
+
+		r, _ := http.NewRequest("POST", "/todos", bytes.NewReader(buf))
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("Unexpected status code: %d", w.Code)
+		}
+	})
+}
+
 func TestTodoGetMany(t *testing.T) {
 	withHandler(func(h http.Handler) {
 		r, _ := http.NewRequest("GET", "/todos", nil)
@@ -53,6 +93,7 @@ func TestTodoGetMany(t *testing.T) {
 
 		var todos gtimer.Todos
 		dec := json.NewDecoder(w.Body)
+		dec.DisallowUnknownFields()
 		if err := dec.Decode(&todos); err != nil {
 			t.Fatalf("Unable to decode body: %v", err)
 		}
@@ -104,6 +145,7 @@ func TestTodoGet(t *testing.T) {
 
 		var todo gtimer.Todo
 		dec := json.NewDecoder(w.Body)
+		dec.DisallowUnknownFields()
 		if err := dec.Decode(&todo); err != nil {
 			t.Fatalf("Unable to decode body: %v", err)
 		}
@@ -116,6 +158,89 @@ func TestTodoGet(t *testing.T) {
 func TestTodoGetNotFound(t *testing.T) {
 	withHandler(func(h http.Handler) {
 		r, _ := http.NewRequest("GET", "/todos/foo", nil)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+
+		if w.Code != http.StatusNotFound {
+			t.Fatalf("Unexpected status code: %d", w.Code)
+		}
+	})
+}
+
+func TestTodoPut(t *testing.T) {
+	withHandler(func(h http.Handler) {
+		update := gtimer.Todo{Title: "st101-1", Status: "active"}
+		buf, _ := json.Marshal(update)
+
+		r, _ := http.NewRequest("PUT", "/todos/st101", bytes.NewReader(buf))
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Unexpected status code: %d", w.Code)
+		}
+		if err := hasJSON(w.HeaderMap); err != nil {
+			t.Fatalf("Unexpected content type: %v", err)
+		}
+
+		dec := json.NewDecoder(w.Body)
+		if err := dec.Decode(&update); err != nil {
+			t.Fatalf("Unable to decode body: %v", err)
+		}
+		if update.Title != "st101-1" {
+			t.Fatalf("Unexpected title: %s", update.Title)
+		}
+		if update.Status != "active" {
+			t.Fatalf("Unexpected status: %s", update.Status)
+		}
+	})
+}
+
+func TestTodoPutNotFound(t *testing.T) {
+	withHandler(func(h http.Handler) {
+		update := gtimer.Todo{Title: "foo", Status: "foo"}
+		buf, _ := json.Marshal(update)
+
+		r, _ := http.NewRequest("PUT", "/todos/foo", bytes.NewReader(buf))
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+
+		if w.Code != http.StatusNotFound {
+			t.Fatalf("Unexpected status code: %d", w.Code)
+		}
+	})
+}
+
+func TestTodoPutBadRequest(t *testing.T) {
+	withHandler(func(h http.Handler) {
+		update := struct{ Foo string }{"foo"}
+		buf, _ := json.Marshal(update)
+
+		r, _ := http.NewRequest("PUT", "/todos/st101", bytes.NewReader(buf))
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("Unexpected status code: %d", w.Code)
+		}
+	})
+}
+
+func TestTodoDelete(t *testing.T) {
+	withHandler(func(h http.Handler) {
+		r, _ := http.NewRequest("DELETE", "/todos/st101", nil)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Unexpected status code: %d", w.Code)
+		}
+	})
+}
+
+func TestTodoDeleteNotFound(t *testing.T) {
+	withHandler(func(h http.Handler) {
+		r, _ := http.NewRequest("DELETE", "/todos/foo", nil)
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 

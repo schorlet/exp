@@ -81,6 +81,7 @@ func (h *TodoHandler) Post() http.HandlerFunc {
 		var create gtimer.Todo
 
 		dec := json.NewDecoder(r.Body)
+		dec.DisallowUnknownFields()
 		if err := dec.Decode(&create); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -133,20 +134,19 @@ func (h *TodoHandler) Get(id string) http.HandlerFunc {
 			return
 		}
 
-		var buf bytes.Buffer
+		var buf []byte
 		if r.Method == "GET" {
-			enc := json.NewEncoder(&buf)
-			if err = enc.Encode(todos[0]); err != nil {
+			if buf, err = json.Marshal(todos[0]); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 
-			etag := fmt.Sprintf(`"%x"`, md5.Sum(buf.Bytes()))
+			etag := fmt.Sprintf(`"%x"`, md5.Sum(buf))
 			w.Header().Set("Etag", etag)
 			w.Header().Set("Cache-Control", "private, max-age=60")
 		}
 
-		content := bytes.NewReader(buf.Bytes())
+		content := bytes.NewReader(buf)
 		modtime := todos[0].Updated
 		http.ServeContent(w, r, "todo.json", modtime, content)
 	}
@@ -159,6 +159,7 @@ func (h *TodoHandler) Put(id string) http.HandlerFunc {
 		var update gtimer.Todo
 
 		dec := json.NewDecoder(r.Body)
+		dec.DisallowUnknownFields()
 		if err := dec.Decode(&update); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
