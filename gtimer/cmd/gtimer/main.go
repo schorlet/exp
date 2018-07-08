@@ -32,13 +32,13 @@ func main() {
 	// service
 	service := server.TodoService{DB: db, Store: store}
 	if err := initTodos(&service); err != nil {
-		log.Panic(err)
+		log.Fatal(err)
 	}
 
 	//server
 	server := http.NewServer(&service)
 	if err := http.ListenAndServe("localhost:8000", server); err != nil {
-		log.Panic(err)
+		log.Fatal(err)
 	}
 }
 

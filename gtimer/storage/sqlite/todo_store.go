@@ -24,7 +24,7 @@ const todoSchema = `
 	create index TODO_IDX_STATUS on TODO (STATUS);
 `
 
-// TodoStore implements #gtimer.TodoStore.
+// TodoStore implements gtimer.TodoStore.
 type TodoStore struct {
 }
 
@@ -38,7 +38,7 @@ func (TodoStore) MustDefine(e sqlx.Ext) {
 	}
 }
 
-// Create creates a Todo.
+// Create handles Todo creation and returns the newly created Todo.
 func (store TodoStore) Create(e sqlx.Ext, create gtimer.Todo) (gtimer.Todo, error) {
 	query := `
 			insert into TODO (ID, TITLE)
@@ -61,7 +61,7 @@ func (store TodoStore) Create(e sqlx.Ext, create gtimer.Todo) (gtimer.Todo, erro
 }
 
 // Read returns all Todos with the specified filter.
-// Read returns database/sql/#ErrNoRows when filtering by ID and when the expected Todo is not found.
+// Read returns gtimer.ErrNotFound when filtering by ID and when the expected Todo is not found.
 // Otherwise the returned Todos may be empty and err be nil.
 func (store TodoStore) Read(q sqlx.Queryer, filter gtimer.TodoFilter) (gtimer.Todos, error) {
 	if filter.ID != "" {

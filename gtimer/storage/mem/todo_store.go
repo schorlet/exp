@@ -9,11 +9,12 @@ import (
 	"github.com/schorlet/exp/gtimer/storage"
 )
 
-// TodoStore implements exp/gtimer#TodoStore.
+// TodoStore implements gtimer.TodoStore.
 type TodoStore map[string]gtimer.Todo
 
 var _ gtimer.TodoStore = make(TodoStore)
 
+// Create handles Todo creation and returns the newly created Todo.
 func (store TodoStore) Create(_ sqlx.Ext, create gtimer.Todo) (gtimer.Todo, error) {
 	if create.ID == "" {
 		var err error
@@ -31,6 +32,7 @@ func (store TodoStore) Create(_ sqlx.Ext, create gtimer.Todo) (gtimer.Todo, erro
 	return create, nil
 }
 
+// Read searches for Todos according to the specified filter.
 func (store TodoStore) Read(_ sqlx.Queryer, filter gtimer.TodoFilter) (gtimer.Todos, error) {
 	if filter.ID != "" {
 		todo, err := store.Get(filter.ID)
@@ -45,6 +47,7 @@ func (store TodoStore) Read(_ sqlx.Queryer, filter gtimer.TodoFilter) (gtimer.To
 	return store.All()
 }
 
+// Get returns the Todo with the specified ID.
 func (store TodoStore) Get(id string) (gtimer.Todo, error) {
 	if todo, ok := store[id]; ok {
 		return todo, nil
@@ -52,6 +55,7 @@ func (store TodoStore) Get(id string) (gtimer.Todo, error) {
 	return gtimer.Todo{}, gtimer.ErrNotFound
 }
 
+// ByStatus returns all Todos with the specified Status.
 func (store TodoStore) ByStatus(status string) (gtimer.Todos, error) {
 	var todos gtimer.Todos
 	for _, todo := range store {
@@ -62,6 +66,7 @@ func (store TodoStore) ByStatus(status string) (gtimer.Todos, error) {
 	return todos, nil
 }
 
+// All returns all Todos.
 func (store TodoStore) All() (gtimer.Todos, error) {
 	todos := make(gtimer.Todos, len(store))
 	index := 0
@@ -72,6 +77,7 @@ func (store TodoStore) All() (gtimer.Todos, error) {
 	return todos, nil
 }
 
+// Update updates the Title and Status of the Todo with the given ID.
 func (store TodoStore) Update(_ sqlx.Ext, update gtimer.Todo) (gtimer.Todo, error) {
 	todo, err := store.Get(update.ID)
 	if err != nil {
@@ -87,6 +93,7 @@ func (store TodoStore) Update(_ sqlx.Ext, update gtimer.Todo) (gtimer.Todo, erro
 	return todo, nil
 }
 
+// Delete deletes the Todo with the given ID.
 func (store TodoStore) Delete(_ sqlx.Ext, id string) error {
 	if _, err := store.Get(id); err != nil {
 		return err
