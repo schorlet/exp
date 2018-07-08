@@ -48,7 +48,7 @@ func TestTodoGetMany(t *testing.T) {
 			t.Fatalf("Unexpected status code: %d", w.Code)
 		}
 		if err := hasJSON(w.HeaderMap); err != nil {
-			t.Fatalf("Unexpected content-type: %v", err)
+			t.Fatalf("Unexpected content type: %v", err)
 		}
 
 		var todos gtimer.Todos
@@ -58,6 +58,33 @@ func TestTodoGetMany(t *testing.T) {
 		}
 		if len(todos) != 2 {
 			t.Fatalf("Unexpected count of Todos: %d", len(todos))
+		}
+	})
+}
+
+func TestTodoHead(t *testing.T) {
+	withHandler(func(h http.Handler) {
+		r, _ := http.NewRequest("HEAD", "/todos/st101", nil)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Unexpected status code: %d", w.Code)
+		}
+		if n, _ := io.Copy(ioutil.Discard, w.Body); n != 0 {
+			t.Fatalf("Unexpected body size: %d", n)
+		}
+	})
+}
+
+func TestTodoHeadNotFound(t *testing.T) {
+	withHandler(func(h http.Handler) {
+		r, _ := http.NewRequest("HEAD", "/todos/foo", nil)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+
+		if w.Code != http.StatusNotFound {
+			t.Fatalf("Unexpected status code: %d", w.Code)
 		}
 	})
 }
@@ -72,7 +99,7 @@ func TestTodoGet(t *testing.T) {
 			t.Fatalf("Unexpected status code: %d", w.Code)
 		}
 		if err := hasJSON(w.HeaderMap); err != nil {
-			t.Fatalf("Unexpected content-type: %v", err)
+			t.Fatalf("Unexpected content type: %v", err)
 		}
 
 		var todo gtimer.Todo

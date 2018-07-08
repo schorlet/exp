@@ -1,7 +1,10 @@
 package http
 
 import (
+	"bytes"
+	"crypto/md5"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"path"
 	"strings"
@@ -57,14 +60,14 @@ func (h *TodoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// ":id", "/" := shiftPath(/:id)
 		id, _ = shiftPath(tail)
 		switch r.Method {
-		case "GET":
+		case "GET", "HEAD":
 			next = h.Get(id)
 		case "PUT":
 			next = h.Put(id)
 		case "DELETE":
 			next = h.Delete(id)
 		default:
-			next = notAllowed("GET", "PUT", "DELETE")
+			next = notAllowed("HEAD", "GET", "PUT", "DELETE")
 		}
 	}
 
@@ -130,9 +133,22 @@ func (h *TodoHandler) Get(id string) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		enc := json.NewEncoder(w)
-		enc.Encode(todos[0])
+		var buf bytes.Buffer
+		if r.Method == "GET" {
+			enc := json.NewEncoder(&buf)
+			if err = enc.Encode(todos[0]); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			etag := fmt.Sprintf(`"%x"`, md5.Sum(buf.Bytes()))
+			w.Header().Set("Etag", etag)
+			w.Header().Set("Cache-Control", "private, max-age=60")
+		}
+
+		content := bytes.NewReader(buf.Bytes())
+		modtime := todos[0].Updated
+		http.ServeContent(w, r, "todo.json", modtime, content)
 	}
 }
 
