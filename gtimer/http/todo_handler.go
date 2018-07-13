@@ -6,48 +6,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"path"
-	"strings"
 
 	"github.com/schorlet/exp/gtimer"
 )
 
-func shiftPath(p string) (head, tail string) {
-	p = path.Clean("/" + p)
-	i := strings.Index(p[1:], "/") + 1
-	if i <= 0 {
-		return p[1:], "/"
-	}
-	return p[1:i], p[i:]
-}
-
-func notAllowed(allowed ...string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Allow", strings.Join(allowed, ", "))
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-		} else {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	}
-}
-
-// TodoHandler handles Todos manipulation via an HTTP server.
+// TodoHandler handles CRUD operations on Todos.
 type TodoHandler struct {
 	Todos gtimer.TodoService
 }
 
 func (h *TodoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// shiftPath returned values:
-	// "todos", "/" := shiftPath(/todos/)
-	// "todos", "/:id" := shiftPath(/todos/:id)
-	_, tail := shiftPath(r.URL.Path)
-
 	var next http.Handler
 	var id string
 
-	switch tail {
-	case "/":
+	switch r.URL.Path {
+	case "/", "":
 		switch r.Method {
 		case "GET":
 			next = h.GetMany()
@@ -58,7 +31,7 @@ func (h *TodoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		// ":id", "/" := shiftPath(/:id)
-		id, _ = shiftPath(tail)
+		id, _ = shiftPath(r.URL.Path)
 		switch r.Method {
 		case "GET", "HEAD":
 			next = h.Get(id)

@@ -35,9 +35,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//server
-	server := http.NewServer(&service)
-	if err := http.ListenAndServe("localhost:8000", server); err != nil {
+	// handler
+	handler := http.NewAppHandler(&service)
+	if err := http.ListenAndServe("localhost:8000", handler); err != nil {
 		log.Fatal(err)
 	}
 }

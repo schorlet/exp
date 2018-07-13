@@ -16,7 +16,7 @@ import (
 	"github.com/schorlet/exp/gtimer/storage/mem"
 )
 
-func withHandler(fn func(h http.Handler)) {
+func withHandler(fn func(string, http.Handler)) {
 	store := make(mem.TodoStore)
 	service := server.TodoService{Store: store}
 
@@ -24,7 +24,12 @@ func withHandler(fn func(h http.Handler)) {
 	service.Create(gtimer.Todo{ID: "st102", Title: "st102"})
 
 	handler := TodoHandler{Todos: &service}
-	fn(&handler)
+	mux := http.NewServeMux()
+
+	prefix := "/api/todos/"
+	mux.Handle(prefix, http.StripPrefix(prefix, &handler))
+
+	fn(prefix[:len(prefix)-1], mux)
 }
 
 func hasJSON(header http.Header) error {
@@ -40,11 +45,11 @@ func hasJSON(header http.Header) error {
 }
 
 func TestTodoPost(t *testing.T) {
-	withHandler(func(h http.Handler) {
+	withHandler(func(prefix string, h http.Handler) {
 		create := gtimer.Todo{Title: "st103"}
 		buf, _ := json.Marshal(create)
 
-		r, _ := http.NewRequest("POST", "/todos", bytes.NewReader(buf))
+		r, _ := http.NewRequest("POST", prefix+"/", bytes.NewReader(buf))
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 
@@ -64,11 +69,11 @@ func TestTodoPost(t *testing.T) {
 }
 
 func TestTodoPostBadRequest(t *testing.T) {
-	withHandler(func(h http.Handler) {
+	withHandler(func(prefix string, h http.Handler) {
 		create := struct{ Foo string }{"foo"}
 		buf, _ := json.Marshal(create)
 
-		r, _ := http.NewRequest("POST", "/todos", bytes.NewReader(buf))
+		r, _ := http.NewRequest("POST", prefix+"/", bytes.NewReader(buf))
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 
@@ -79,8 +84,8 @@ func TestTodoPostBadRequest(t *testing.T) {
 }
 
 func TestTodoGetMany(t *testing.T) {
-	withHandler(func(h http.Handler) {
-		r, _ := http.NewRequest("GET", "/todos", nil)
+	withHandler(func(prefix string, h http.Handler) {
+		r, _ := http.NewRequest("GET", prefix+"/", nil)
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 
@@ -104,8 +109,8 @@ func TestTodoGetMany(t *testing.T) {
 }
 
 func TestTodoHead(t *testing.T) {
-	withHandler(func(h http.Handler) {
-		r, _ := http.NewRequest("HEAD", "/todos/st101", nil)
+	withHandler(func(prefix string, h http.Handler) {
+		r, _ := http.NewRequest("HEAD", prefix+"/st101", nil)
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 
@@ -119,8 +124,8 @@ func TestTodoHead(t *testing.T) {
 }
 
 func TestTodoHeadNotFound(t *testing.T) {
-	withHandler(func(h http.Handler) {
-		r, _ := http.NewRequest("HEAD", "/todos/foo", nil)
+	withHandler(func(prefix string, h http.Handler) {
+		r, _ := http.NewRequest("HEAD", prefix+"/foo", nil)
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 
@@ -131,8 +136,8 @@ func TestTodoHeadNotFound(t *testing.T) {
 }
 
 func TestTodoGet(t *testing.T) {
-	withHandler(func(h http.Handler) {
-		r, _ := http.NewRequest("GET", "/todos/st101", nil)
+	withHandler(func(prefix string, h http.Handler) {
+		r, _ := http.NewRequest("GET", prefix+"/st101", nil)
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 
@@ -156,8 +161,8 @@ func TestTodoGet(t *testing.T) {
 }
 
 func TestTodoGetNotFound(t *testing.T) {
-	withHandler(func(h http.Handler) {
-		r, _ := http.NewRequest("GET", "/todos/foo", nil)
+	withHandler(func(prefix string, h http.Handler) {
+		r, _ := http.NewRequest("GET", prefix+"/foo", nil)
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 
@@ -168,11 +173,11 @@ func TestTodoGetNotFound(t *testing.T) {
 }
 
 func TestTodoPut(t *testing.T) {
-	withHandler(func(h http.Handler) {
+	withHandler(func(prefix string, h http.Handler) {
 		update := gtimer.Todo{Title: "st101-1", Status: "active"}
 		buf, _ := json.Marshal(update)
 
-		r, _ := http.NewRequest("PUT", "/todos/st101", bytes.NewReader(buf))
+		r, _ := http.NewRequest("PUT", prefix+"/st101", bytes.NewReader(buf))
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 
@@ -197,11 +202,11 @@ func TestTodoPut(t *testing.T) {
 }
 
 func TestTodoPutNotFound(t *testing.T) {
-	withHandler(func(h http.Handler) {
+	withHandler(func(prefix string, h http.Handler) {
 		update := gtimer.Todo{Title: "foo", Status: "foo"}
 		buf, _ := json.Marshal(update)
 
-		r, _ := http.NewRequest("PUT", "/todos/foo", bytes.NewReader(buf))
+		r, _ := http.NewRequest("PUT", prefix+"/foo", bytes.NewReader(buf))
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 
@@ -212,11 +217,11 @@ func TestTodoPutNotFound(t *testing.T) {
 }
 
 func TestTodoPutBadRequest(t *testing.T) {
-	withHandler(func(h http.Handler) {
+	withHandler(func(prefix string, h http.Handler) {
 		update := struct{ Foo string }{"foo"}
 		buf, _ := json.Marshal(update)
 
-		r, _ := http.NewRequest("PUT", "/todos/st101", bytes.NewReader(buf))
+		r, _ := http.NewRequest("PUT", prefix+"/st101", bytes.NewReader(buf))
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 
@@ -227,8 +232,8 @@ func TestTodoPutBadRequest(t *testing.T) {
 }
 
 func TestTodoDelete(t *testing.T) {
-	withHandler(func(h http.Handler) {
-		r, _ := http.NewRequest("DELETE", "/todos/st101", nil)
+	withHandler(func(prefix string, h http.Handler) {
+		r, _ := http.NewRequest("DELETE", prefix+"/st101", nil)
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 
@@ -239,8 +244,8 @@ func TestTodoDelete(t *testing.T) {
 }
 
 func TestTodoDeleteNotFound(t *testing.T) {
-	withHandler(func(h http.Handler) {
-		r, _ := http.NewRequest("DELETE", "/todos/foo", nil)
+	withHandler(func(prefix string, h http.Handler) {
+		r, _ := http.NewRequest("DELETE", prefix+"/foo", nil)
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 
