@@ -73,17 +73,17 @@ func SaveKeyBlock(cn string, block *pem.Block) error {
 	// O_EXCL: file must not exist
 	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0400)
 	if err != nil {
-		return fmt.Errorf("open %s: %v", path, err)
+		return fmt.Errorf("open file: %v", err)
 	}
 
 	err = pem.Encode(file, block)
 	if err != nil {
-		return fmt.Errorf("write to %s: %v", path, err)
+		return fmt.Errorf("write key: %v", err)
 	}
 
 	err = file.Close()
 	if err != nil {
-		return fmt.Errorf("close %s: %v", path, err)
+		return fmt.Errorf("close file: %v", err)
 	}
 
 	fmt.Printf("%q key saved to %q\n", cn, path)

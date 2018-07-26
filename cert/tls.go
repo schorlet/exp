@@ -47,7 +47,7 @@ func ReadTLSCert(cn, password string) (tls.Certificate, error) {
 func NewTLSConfig(ca, server string) (*tls.Config, error) {
 	clientCAs, err := NewCertPool(ca, false)
 	if err != nil {
-		return nil, fmt.Errorf("clientCAs pool: %v", err)
+		return nil, fmt.Errorf("create ca pool: %v", err)
 	}
 
 	tlsServer, err := ReadTLSCert(server, "")
@@ -65,13 +65,20 @@ func NewTLSConfig(ca, server string) (*tls.Config, error) {
 		},
 		MinVersion: tls.VersionTLS12,
 		CipherSuites: []uint16{
+			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
 			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
+			tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305, // Go 1.8 only
+			tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,   // Go 1.8 only
+			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			// Best disabled, as they don't provide Forward Secrecy,
+			// but might be necessary for some clients
+			// tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+			// tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
 		},
 		Certificates: []tls.Certificate{tlsServer},
 		NextProtos:   []string{"h2"},
-		ClientAuth:   tls.RequireAndVerifyClientCert,
+		ClientAuth:   tls.VerifyClientCertIfGiven,
 		ClientCAs:    clientCAs,
 	}, nil
 }
@@ -79,7 +86,7 @@ func NewTLSConfig(ca, server string) (*tls.Config, error) {
 func NewTLSClient(ca, client string) (*http.Client, error) {
 	rootCAs, err := NewCertPool(ca, true)
 	if err != nil {
-		return nil, fmt.Errorf("rootCAs pool: %v", err)
+		return nil, fmt.Errorf("create ca pool: %v", err)
 	}
 
 	tlsClient, err := ReadTLSCert(client, "")

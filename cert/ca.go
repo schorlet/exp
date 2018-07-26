@@ -23,8 +23,7 @@ func CreateCACert(cn string) error {
 	subjectKeyId := sha1.Sum([]byte("CN=" + cn + ",O=washingmachine,ST=france,C=EU"))
 
 	cert := x509.Certificate{
-		Version:               3,
-		SerialNumber:          big.NewInt(1),
+		SerialNumber:          big.NewInt(10000),
 		IsCA:                  true,
 		MaxPathLenZero:        true,
 		BasicConstraintsValid: true,
@@ -52,14 +51,14 @@ func CreateCACert(cn string) error {
 	}
 	block := pem.Block{Type: "CERTIFICATE", Bytes: der}
 
-	err = SaveCertBlock(cn, &block)
-	if err != nil {
-		return fmt.Errorf("save cert: %v", err)
-	}
-
 	err = SaveKey(cn, cn, key)
 	if err != nil {
 		return fmt.Errorf("save key: %v", err)
+	}
+
+	err = SaveCertBlock(cn, &block)
+	if err != nil {
+		return fmt.Errorf("save cert: %v", err)
 	}
 
 	return nil
@@ -70,15 +69,15 @@ func SaveCertBlock(cn string, block *pem.Block) error {
 
 	file, err := os.Create(path)
 	if err != nil {
-		return fmt.Errorf("open %s: %v", path, err)
+		return fmt.Errorf("open file: %v", err)
 	}
 
 	if err = pem.Encode(file, block); err != nil {
-		return fmt.Errorf("write to %s: %v", path, err)
+		return fmt.Errorf("write cert: %v", err)
 	}
 
 	if err = file.Close(); err != nil {
-		return fmt.Errorf("close %s: %v", path, err)
+		return fmt.Errorf("close file: %v", err)
 	}
 
 	fmt.Printf("%q certificate saved to %q\n", cn, path)

@@ -25,9 +25,8 @@ func CreateClientCert(ca, client string) error {
 
 	subjectKeyId := sha1.Sum([]byte("CN=" + client + ",O=washingmachine,ST=france,C=EU"))
 
-	cert := &x509.Certificate{
-		Version:      3,
-		SerialNumber: big.NewInt(1),
+	cert := x509.Certificate{
+		SerialNumber: big.NewInt(12000),
 		SubjectKeyId: subjectKeyId[:],
 		Subject: pkix.Name{
 			CommonName:   client,
@@ -45,7 +44,7 @@ func CreateClientCert(ca, client string) error {
 
 	der, err := x509.CreateCertificate(
 		rand.Reader,
-		cert,
+		&cert,
 		tlsCA.Leaf,
 		&key.PublicKey,
 		tlsCA.PrivateKey,
@@ -55,14 +54,14 @@ func CreateClientCert(ca, client string) error {
 	}
 	block := pem.Block{Type: "CERTIFICATE", Bytes: der}
 
-	err = SaveCertBlock(client, &block)
-	if err != nil {
-		return fmt.Errorf("save cert: %v", err)
-	}
-
 	err = SaveKey(client, "", key)
 	if err != nil {
 		return fmt.Errorf("save key: %v", err)
+	}
+
+	err = SaveCertBlock(client, &block)
+	if err != nil {
+		return fmt.Errorf("save cert: %v", err)
 	}
 
 	return nil
