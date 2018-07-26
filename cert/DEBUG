@@ -1,0 +1,33 @@
+
+openssl s_client -connect localhost:8443 \
+	-status -tls1_2 -strict \
+	-CAfile /tmp/ca.crt
+
+openssl s_client -connect localhost:8443 \
+	-status -tls1_2 -strict \
+	-cert /tmp/client.crt -key /tmp/client.key \
+	-CAfile /tmp/ca.crt
+
+
+GET / HTTP/1.0
+
+GET / HTTP/1.1
+Host: localhost:8443
+Connection: close
+
+---------------------------------------------------
+
+openssl pkcs12 \
+	-export \
+	-in /tmp/client.crt -inkey /tmp/client.key \
+	-CAfile /tmp/ca.crt \
+	-chain \
+	-out /tmp/client.p12
+
+---------------------------------------------------
+
+curl -v --cacert /tmp/ca.crt https://localhost:8443/
+
+curl -v --cacert /tmp/ca.crt \
+	--cert /tmp/client.crt --key /tmp/client.key \
+	https://localhost:8443/
