@@ -7,12 +7,14 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 )
 
 func ReadKey(cn, password string) (*rsa.PrivateKey, error) {
-	path := filepath.Join(PKI_PATH, cn+".key")
+	path := filepath.Join(*pkiPath, cn+".key")
+	log.Printf("reading %q key from %q\n", cn, path)
 
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -68,12 +70,13 @@ func SaveKey(cn, password string, key *rsa.PrivateKey) error {
 }
 
 func SaveKeyBlock(cn string, block *pem.Block) error {
-	path := filepath.Join(PKI_PATH, cn+".key")
+	path := filepath.Join(*pkiPath, cn+".key")
+	log.Printf("writing %q key to %q\n", cn, path)
 
 	// O_EXCL: file must not exist
 	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0400)
 	if err != nil {
-		return fmt.Errorf("open file: %v", err)
+		return err
 	}
 
 	err = pem.Encode(file, block)
@@ -83,10 +86,8 @@ func SaveKeyBlock(cn string, block *pem.Block) error {
 
 	err = file.Close()
 	if err != nil {
-		return fmt.Errorf("close file: %v", err)
+		return err
 	}
-
-	fmt.Printf("%q key saved to %q\n", cn, path)
 
 	return nil
 }

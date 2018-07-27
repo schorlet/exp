@@ -6,6 +6,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -17,7 +18,9 @@ func ReadTLSCert(cn, password string) (tls.Certificate, error) {
 		return tls.Certificate{}, fmt.Errorf("read key: %v", err)
 	}
 
-	path := filepath.Join(PKI_PATH, cn+".crt")
+	path := filepath.Join(*pkiPath, cn+".crt")
+	log.Printf("reading %q certificate from %q\n", cn, path)
+
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return tls.Certificate{}, err
@@ -113,7 +116,8 @@ func NewTLSClient(ca, client string) (*http.Client, error) {
 }
 
 func NewCertPool(ca string, system bool) (*x509.CertPool, error) {
-	path := filepath.Join(PKI_PATH, ca+".crt")
+	path := filepath.Join(*pkiPath, ca+".crt")
+	log.Printf("reading %q certificate from %q\n", ca, path)
 
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -136,7 +140,7 @@ func NewCertPool(ca string, system bool) (*x509.CertPool, error) {
 }
 
 func NewTLSServer(ca, server, addr string, handler http.Handler) (*http.Server, error) {
-	tlsConfig, err := NewTLSConfig("ca", "localhost")
+	tlsConfig, err := NewTLSConfig(ca, server)
 	if err != nil {
 		return nil, fmt.Errorf("create tls config: %v", err)
 	}

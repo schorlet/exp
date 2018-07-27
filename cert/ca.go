@@ -8,6 +8,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
+	"log"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -65,11 +66,12 @@ func CreateCACert(cn string) error {
 }
 
 func SaveCertBlock(cn string, block *pem.Block) error {
-	path := filepath.Join(PKI_PATH, cn+".crt")
+	path := filepath.Join(*pkiPath, cn+".crt")
+	log.Printf("writing %q certificate to %q\n", cn, path)
 
 	file, err := os.Create(path)
 	if err != nil {
-		return fmt.Errorf("open file: %v", err)
+		return err
 	}
 
 	if err = pem.Encode(file, block); err != nil {
@@ -77,10 +79,8 @@ func SaveCertBlock(cn string, block *pem.Block) error {
 	}
 
 	if err = file.Close(); err != nil {
-		return fmt.Errorf("close file: %v", err)
+		return err
 	}
-
-	fmt.Printf("%q certificate saved to %q\n", cn, path)
 
 	return nil
 }

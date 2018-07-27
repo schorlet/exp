@@ -1,19 +1,36 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"os"
 )
 
-var PKI_PATH = os.TempDir()
+var (
+	pkiPath = flag.String("pki", os.TempDir(), "path to read/write certificates and keys")
+	stderr  = log.New(os.Stderr, "", log.LstdFlags)
+)
+
+func init() {
+	verbose := flag.Bool("v", false, "print log messages")
+	flag.Parse()
+
+	log.SetOutput(ioutil.Discard)
+	if *verbose {
+		log.SetOutput(os.Stderr)
+	}
+}
 
 func main() {
-	// if err := CreateCerts("ca", "localhost", "client"); err != nil {
-	// log.Fatalf("generate certs: %v", err)
-	// }
+	stderr := log.New(os.Stderr, "", log.LstdFlags)
+
+	if err := CreateCerts("ca", "localhost", "client"); err != nil {
+		stderr.Fatalf("create certs: %v", err)
+	}
 
 	handler := http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
@@ -37,12 +54,12 @@ func main() {
 
 	tlsServer, err := NewTLSServer("ca", "localhost", ":8443", handler)
 	if err != nil {
-		log.Fatalf("create tls server: %v", err)
+		stderr.Fatalf("create tls server: %v", err)
 	}
 
-	fmt.Println("Starting server ...")
+	log.Println("Starting server ...")
 	if err := tlsServer.ListenAndServeTLS("", ""); err != nil {
-		log.Fatal(err)
+		stderr.Fatal(err)
 	}
 }
 

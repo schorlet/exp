@@ -12,7 +12,7 @@ import (
 func init() {
 	err := CreateCerts("ca", "localhost", "client")
 	if err != nil {
-		panic(fmt.Sprintf("generate certs: %v", err))
+		stderr.Fatalf("create certs: %v", err)
 	}
 }
 
@@ -34,7 +34,7 @@ func withServer(fn func(string)) {
 
 	tlsConfig, err := NewTLSConfig("ca", "localhost")
 	if err != nil {
-		panic(fmt.Sprintf("create tls config: %v", err))
+		stderr.Fatalf("create tls config: %v", err)
 	}
 
 	server.TLS = tlsConfig
