@@ -26,6 +26,9 @@ openssl pkcs12 \
 
 ---------------------------------------------------
 
+export GODEBUG="http2debug=2"
+
+
 curl -v --cacert /tmp/ca.crt https://localhost:8443/
 
 curl -v --cacert /tmp/ca.crt \

@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/tls"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -17,19 +16,7 @@ func init() {
 }
 
 func withServer(fn func(string)) {
-	handler := http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			world := "world"
-			if len(r.TLS.PeerCertificates) > 0 {
-				if len(r.TLS.PeerCertificates[0].EmailAddresses) > 0 {
-					world = r.TLS.PeerCertificates[0].EmailAddresses[0]
-				}
-			}
-			fmt.Fprintf(w, "hello %v", world)
-		},
-	)
-
-	server := httptest.NewUnstartedServer(handler)
+	server := httptest.NewUnstartedServer(Hello("world"))
 	defer server.Close()
 
 	tlsConfig, err := NewTLSConfig("ca", "localhost")
@@ -63,7 +50,7 @@ func TestClientAuth(t *testing.T) {
 		greeting := string(data)
 
 		if greeting != "hello client@washingmachine" {
-			t.Fatalf("Unexpected greeting: %q", greeting)
+			t.Fatalf("unexpected greeting: %q", greeting)
 		}
 	})
 }
@@ -93,7 +80,7 @@ func TestClientNoAuth(t *testing.T) {
 		greeting := string(data)
 
 		if greeting != "hello world" {
-			t.Fatalf("Unexpected greeting: %q", greeting)
+			t.Fatalf("unexpected greeting: %q", greeting)
 		}
 	})
 }

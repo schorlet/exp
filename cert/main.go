@@ -32,32 +32,12 @@ func main() {
 		stderr.Fatalf("create certs: %v", err)
 	}
 
-	handler := http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			dump, err := httputil.DumpRequest(r, false)
-			if err != nil {
-				http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
-				return
-			}
-			log.Printf("%s", dump)
-
-			world := "world"
-			if len(r.TLS.PeerCertificates) > 0 {
-				if len(r.TLS.PeerCertificates[0].EmailAddresses) > 0 {
-					world = r.TLS.PeerCertificates[0].EmailAddresses[0]
-				}
-			}
-			fmt.Fprintf(w, "hello %v", world)
-			fmt.Fprintln(w)
-		},
-	)
-
-	tlsServer, err := NewTLSServer("ca", "localhost", ":8443", handler)
+	tlsServer, err := NewTLSServer("ca", "localhost", ":8443", Hello("world"))
 	if err != nil {
 		stderr.Fatalf("create tls server: %v", err)
 	}
 
-	log.Println("Starting server ...")
+	log.Println("starting server ...")
 	if err := tlsServer.ListenAndServeTLS("", ""); err != nil {
 		stderr.Fatal(err)
 	}
@@ -77,4 +57,23 @@ func CreateCerts(ca, server, client string) error {
 	}
 
 	return nil
+}
+
+func Hello(world string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		dump, err := httputil.DumpRequest(r, false)
+		if err != nil {
+			http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
+			return
+		}
+		log.Printf("%s", dump)
+
+		who := world
+		if len(r.TLS.PeerCertificates) > 0 {
+			if len(r.TLS.PeerCertificates[0].EmailAddresses) > 0 {
+				who = r.TLS.PeerCertificates[0].EmailAddresses[0]
+			}
+		}
+		fmt.Fprintf(w, "hello %v", who)
+	}
 }
