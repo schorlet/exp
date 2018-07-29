@@ -15,7 +15,7 @@ var (
 	stderr  = log.New(os.Stderr, "", log.LstdFlags)
 )
 
-func init() {
+func prepare() {
 	verbose := flag.Bool("v", false, "print log messages")
 	flag.Parse()
 
@@ -26,7 +26,7 @@ func init() {
 }
 
 func main() {
-	stderr := log.New(os.Stderr, "", log.LstdFlags)
+	prepare()
 
 	if err := CreateCerts("ca", "localhost", "client"); err != nil {
 		stderr.Fatalf("create certs: %v", err)

@@ -5,10 +5,15 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path"
 	"testing"
 )
 
 func init() {
+	prepare()
+	*pkiPath = path.Dir(os.Args[0])
+
 	err := CreateCerts("ca", "localhost", "client")
 	if err != nil {
 		stderr.Fatalf("create certs: %v", err)
