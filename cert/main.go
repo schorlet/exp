@@ -32,7 +32,11 @@ func main() {
 		stderr.Fatalf("create certs: %v", err)
 	}
 
-	tlsServer, err := NewTLSServer("ca", "localhost", ":8443", Hello("world"))
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", HelloHandler("world"))
+	mux.HandleFunc("/echo", EchoHandler)
+
+	tlsServer, err := NewTLSServer("ca", "localhost", ":8443", mux)
 	if err != nil {
 		stderr.Fatalf("create tls server: %v", err)
 	}
@@ -59,7 +63,7 @@ func CreateCerts(ca, server, client string) error {
 	return nil
 }
 
-func Hello(world string) http.HandlerFunc {
+func HelloHandler(world string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dump, err := httputil.DumpRequest(r, false)
 		if err != nil {

@@ -21,7 +21,7 @@ func init() {
 }
 
 func withServer(fn func(string)) {
-	server := httptest.NewUnstartedServer(Hello("world"))
+	server := httptest.NewUnstartedServer(HelloHandler("world"))
 	defer server.Close()
 
 	tlsConfig, err := NewTLSConfig("ca", "localhost")
