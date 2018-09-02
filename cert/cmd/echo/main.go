@@ -77,7 +77,7 @@ func main() {
 	go func() {
 		for {
 			time.Sleep(1 * time.Second)
-			fmt.Fprintf(pw, "It is now %v\n", time.Now())
+			fmt.Fprintf(pw, "It is now %v\n", time.Now().UTC())
 		}
 	}()
 

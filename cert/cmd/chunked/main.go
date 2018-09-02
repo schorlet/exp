@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -16,13 +17,20 @@ func main() {
 	log.SetFlags(0)
 
 	if *cli {
-		log.Fatal(client())
+		log.Fatalf("client: %v", client())
 	}
-	log.Fatal(serve())
+	log.Fatalf("server: %v", serve())
 }
 
 func client() error {
-	resp, err := http.Get("http://localhost:8000/")
+	ctx := context.Background()
+	ctx, _ = context.WithTimeout(ctx, 10*time.Second)
+
+	req, _ := http.NewRequest(http.MethodGet, "http://localhost:8000/", nil)
+	req = req.WithContext(ctx)
+
+	var client http.Client
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -37,8 +45,15 @@ func client() error {
 }
 
 func serve() error {
-	http.HandleFunc("/", chunked)
-	return http.ListenAndServe("localhost:8000", nil)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", chunked)
+	server := http.Server{
+		Addr:         "localhost:8000",
+		Handler:      mux,
+		ReadTimeout:  1 * time.Second,
+		WriteTimeout: 12 * time.Second,
+	}
+	return server.ListenAndServe()
 }
 
 func chunked(w http.ResponseWriter, r *http.Request) {
@@ -47,13 +62,18 @@ func chunked(w http.ResponseWriter, r *http.Request) {
 		panic("not a http.Flusher")
 	}
 
-	w.Header().Set("Connection", "Keep-Alive")
 	w.Header().Set("Transfer-Encoding", "chunked")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 
 	for {
-		time.Sleep(1 * time.Second)
-		fmt.Fprintf(w, "It is now %s\n", time.Now().UTC())
-		flusher.Flush()
+		select {
+		case <-time.After(1 * time.Second):
+			fmt.Fprintf(w, "It is now %s\n", time.Now().UTC())
+			flusher.Flush()
+
+		case <-r.Context().Done():
+			log.Printf("server: %v", r.Context().Err())
+			return
+		}
 	}
 }
