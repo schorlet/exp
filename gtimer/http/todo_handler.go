@@ -11,11 +11,15 @@ import (
 )
 
 // TodoHandler handles CRUD operations on Todos.
-type TodoHandler struct {
+func TodoHandler(service gtimer.TodoService) http.Handler {
+	return &todoHandler{service}
+}
+
+type todoHandler struct {
 	Todos gtimer.TodoService
 }
 
-func (h *TodoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *todoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var next http.Handler
 	var id string
 
@@ -49,7 +53,7 @@ func (h *TodoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Post accepts a Todo encoded in JSON in the request body, saves it
 // and returns it in the response body encoded in JSON.
-func (h *TodoHandler) Post() http.HandlerFunc {
+func (h *todoHandler) Post() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var create gtimer.Todo
 
@@ -74,7 +78,7 @@ func (h *TodoHandler) Post() http.HandlerFunc {
 
 // GetMany selects the Todos according to the TodoFilter
 // and returns them in the response body encoded in JSON.
-func (h *TodoHandler) GetMany() http.HandlerFunc {
+func (h *todoHandler) GetMany() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filter := gtimer.TodoFilter{Status: r.FormValue("status")}
 
@@ -92,7 +96,7 @@ func (h *TodoHandler) GetMany() http.HandlerFunc {
 
 // Get selects the Todo by its ID and returns it in the response body encoded in JSON.
 // A 404 error is returned if the Todo does not exist.
-func (h *TodoHandler) Get(id string) http.HandlerFunc {
+func (h *todoHandler) Get(id string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filter := gtimer.TodoFilter{ID: id}
 
@@ -127,7 +131,7 @@ func (h *TodoHandler) Get(id string) http.HandlerFunc {
 
 // Put handles the update of the Todo designated by the ID.
 // A 404 error is returned if the Todo does not exist.
-func (h *TodoHandler) Put(id string) http.HandlerFunc {
+func (h *todoHandler) Put(id string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var update gtimer.Todo
 
@@ -158,7 +162,7 @@ func (h *TodoHandler) Put(id string) http.HandlerFunc {
 
 // Delete handles the deletion of the Todo designated by the ID.
 // A 404 error is returned if the Todo does not exist.
-func (h *TodoHandler) Delete(id string) http.HandlerFunc {
+func (h *todoHandler) Delete(id string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := h.Todos.Delete(id)
 		if err != nil {

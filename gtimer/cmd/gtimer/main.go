@@ -15,8 +15,6 @@ import (
 )
 
 func main() {
-	log.Println("gtimer starting ...")
-
 	// database
 	url := os.Getenv("DATABASE_URL")
 	if url == "" {

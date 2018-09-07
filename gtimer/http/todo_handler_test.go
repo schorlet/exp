@@ -23,11 +23,11 @@ func withHandler(fn func(string, http.Handler)) {
 	service.Create(gtimer.Todo{ID: "st101", Title: "st101"})
 	service.Create(gtimer.Todo{ID: "st102", Title: "st102"})
 
-	handler := TodoHandler{Todos: &service}
+	handler := TodoHandler(&service)
 	mux := http.NewServeMux()
 
 	prefix := "/api/todos/"
-	mux.Handle(prefix, http.StripPrefix(prefix, &handler))
+	mux.Handle(prefix, http.StripPrefix(prefix, handler))
 
 	fn(prefix[:len(prefix)-1], mux)
 }

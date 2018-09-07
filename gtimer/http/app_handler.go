@@ -1,10 +1,13 @@
 package http
 
 import (
+	"expvar"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/schorlet/exp/gtimer"
 )
@@ -12,16 +15,27 @@ import (
 // NewAppHandler exposes services through a HTTP handler.
 func NewAppHandler(todos gtimer.TodoService) http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", handleIndex("Hello %s\n"))
+	mux.Handle("/", statsHandler("app", handleIndex("Hello %s\n")))
 
-	handler := TodoHandler{Todos: todos}
-	mux.Handle("/api/todos/", http.StripPrefix("/api/todos/", &handler))
+	handler := TodoHandler(todos)
+	handler = statsHandler("api/todos", handler)
+	mux.Handle("/api/todos/", http.StripPrefix("/api/todos/", handler))
+
+	mux.Handle("/debug/vars", expvar.Handler())
+
+	mux.HandleFunc("/favicon.ico", http.NotFound)
+	mux.HandleFunc("/favicon.png", http.NotFound)
+	mux.HandleFunc("/opensearch.xml", http.NotFound)
 
 	return mux
 }
 
 func handleIndex(format string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		rand.Seed(time.Now().UnixNano())
+		if rand.Int()%2 == 0 {
+			panic("random panic")
+		}
 		fmt.Fprintf(w, format, "World")
 	}
 }
