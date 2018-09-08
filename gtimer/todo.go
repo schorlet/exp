@@ -24,16 +24,13 @@ func (t Todo) String() string {
 // Todos slice.
 type Todos []Todo
 
-// TodoFilter struct.
-type TodoFilter struct {
-	ID     string
-	Status string
-}
+// TodoFilter func.
+type TodoFilter func(*Todo)
 
 // TodoService interface.
 type TodoService interface {
 	Create(create Todo) (Todo, error)
-	Read(filter TodoFilter) (Todos, error)
+	Read(filters ...TodoFilter) (Todos, error)
 	Update(update Todo) (Todo, error)
 	Delete(id string) error
 }
@@ -41,7 +38,7 @@ type TodoService interface {
 // TodoStore interface.
 type TodoStore interface {
 	Create(e sqlx.Ext, create Todo) (Todo, error)
-	Read(q sqlx.Queryer, filter TodoFilter) (Todos, error)
+	Read(q sqlx.Queryer, filters ...TodoFilter) (Todos, error)
 	Update(e sqlx.Ext, update Todo) (Todo, error)
 	Delete(e sqlx.Ext, id string) error
 }

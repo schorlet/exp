@@ -63,16 +63,20 @@ func (store TodoStore) Create(e sqlx.Ext, create gtimer.Todo) (gtimer.Todo, erro
 // Read returns all Todos with the specified filter.
 // Read returns gtimer.ErrNotFound when filtering by ID and when the expected Todo is not found.
 // Otherwise the returned Todos may be empty and err be nil.
-func (store TodoStore) Read(q sqlx.Queryer, filter gtimer.TodoFilter) (gtimer.Todos, error) {
-	if filter.ID != "" {
-		todo, err := store.Get(q, filter.ID)
+func (store TodoStore) Read(q sqlx.Queryer, filters ...gtimer.TodoFilter) (gtimer.Todos, error) {
+	var todo gtimer.Todo
+	for _, filter := range filters {
+		filter(&todo)
+	}
+	if todo.ID != "" {
+		todo, err := store.Get(q, todo.ID)
 		if err != nil {
 			return gtimer.Todos{}, err
 		}
 		return gtimer.Todos{todo}, err
 	}
-	if filter.Status != "" {
-		return store.ByStatus(q, filter.Status)
+	if todo.Status != "" {
+		return store.ByStatus(q, todo.Status)
 	}
 	return store.All(q)
 }

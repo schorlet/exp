@@ -80,7 +80,9 @@ func (h *todoHandler) Post() http.HandlerFunc {
 // and returns them in the response body encoded in JSON.
 func (h *todoHandler) GetMany() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		filter := gtimer.TodoFilter{Status: r.FormValue("status")}
+		filter := func(todo *gtimer.Todo) {
+			todo.Status = r.FormValue("status")
+		}
 
 		todos, err := h.Todos.Read(filter)
 		if err != nil {
@@ -98,7 +100,9 @@ func (h *todoHandler) GetMany() http.HandlerFunc {
 // A 404 error is returned if the Todo does not exist.
 func (h *todoHandler) Get(id string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		filter := gtimer.TodoFilter{ID: id}
+		filter := func(todo *gtimer.Todo) {
+			todo.ID = id
+		}
 
 		todos, err := h.Todos.Read(filter)
 		if err != nil {

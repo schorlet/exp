@@ -21,6 +21,18 @@ func TodoTestSuite(t *testing.T, tester TodoTester) {
 	t.Run("Todo.Delete", tester(todoDelete))
 }
 
+func withID(id string) gtimer.TodoFilter {
+	return func(todo *gtimer.Todo) {
+		todo.ID = id
+	}
+}
+
+func withStatus(status string) gtimer.TodoFilter {
+	return func(todo *gtimer.Todo) {
+		todo.Status = status
+	}
+}
+
 func todoCreate(t *testing.T, db *sqlx.DB, store gtimer.TodoStore) {
 	create1, err := store.Create(db, gtimer.Todo{ID: "st101", Title: "st101"})
 	if err != nil {
@@ -43,7 +55,7 @@ func todoCreate(t *testing.T, db *sqlx.DB, store gtimer.TodoStore) {
 		t.Fatalf("Unexpected Todo ID: %s", create2.ID)
 	}
 
-	todos, err := store.Read(db, gtimer.TodoFilter{})
+	todos, err := store.Read(db)
 	if err != nil {
 		t.Fatalf("Unable to get Todos: %v", err)
 	}
@@ -58,7 +70,7 @@ func todoRead(t *testing.T, db *sqlx.DB, store gtimer.TodoStore) {
 		t.Fatalf("Unable to create Todo: %v", err)
 	}
 
-	todos, err := store.Read(db, gtimer.TodoFilter{ID: create.ID})
+	todos, err := store.Read(db, withID(create.ID))
 	if err != nil {
 		t.Fatalf("Unable to get Todo: %v", err)
 	}
@@ -66,7 +78,7 @@ func todoRead(t *testing.T, db *sqlx.DB, store gtimer.TodoStore) {
 		t.Fatalf("Unexpected count of Todos: %d", len(todos))
 	}
 
-	todos, err = store.Read(db, gtimer.TodoFilter{ID: "0"})
+	todos, err = store.Read(db, withID("0"))
 	if err == nil {
 		t.Fatalf("Unexpected Todo: %v", todos)
 	}
@@ -77,7 +89,7 @@ func todoRead(t *testing.T, db *sqlx.DB, store gtimer.TodoStore) {
 		t.Fatalf("Unexpected count of Todos: %d", len(todos))
 	}
 
-	todos, err = store.Read(db, gtimer.TodoFilter{Status: create.Status})
+	todos, err = store.Read(db, withStatus(create.Status))
 	if err != nil {
 		t.Fatalf("Unable to get Todo: %v", err)
 	}
@@ -85,7 +97,7 @@ func todoRead(t *testing.T, db *sqlx.DB, store gtimer.TodoStore) {
 		t.Fatalf("Unexpected count of Todos: %d", len(todos))
 	}
 
-	todos, err = store.Read(db, gtimer.TodoFilter{Status: "foo"})
+	todos, err = store.Read(db, withStatus("foo"))
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}

@@ -19,8 +19,8 @@ func (todos *TodoService) Create(create gtimer.Todo) (gtimer.Todo, error) {
 }
 
 // Read searches for Todos according to the specified filter.
-func (todos *TodoService) Read(filter gtimer.TodoFilter) (gtimer.Todos, error) {
-	return todos.Store.Read(todos.DB, filter)
+func (todos *TodoService) Read(filters ...gtimer.TodoFilter) (gtimer.Todos, error) {
+	return todos.Store.Read(todos.DB, filters...)
 }
 
 // Update handles Todo modification and returns the updated Todo.
