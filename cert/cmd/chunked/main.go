@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/pprof"
 	"time"
 )
 
@@ -47,6 +48,15 @@ func client() error {
 func serve() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", chunked)
+	mux.HandleFunc("/worker.html", handleFile("worker.html"))
+	mux.HandleFunc("/worker.js", handleFile("worker.js"))
+
+	mux.HandleFunc("/debug/pprof/", pprof.Index)
+
+	mux.HandleFunc("/favicon.ico", http.NotFound)
+	mux.HandleFunc("/favicon.png", http.NotFound)
+	mux.HandleFunc("/opensearch.xml", http.NotFound)
+
 	server := http.Server{
 		Addr:         "localhost:8000",
 		Handler:      mux,
@@ -54,6 +64,12 @@ func serve() error {
 		WriteTimeout: 12 * time.Second,
 	}
 	return server.ListenAndServe()
+}
+
+func handleFile(name string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, name)
+	}
 }
 
 func chunked(w http.ResponseWriter, r *http.Request) {

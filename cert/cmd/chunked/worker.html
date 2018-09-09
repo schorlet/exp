@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<div id="result"></div>
+		<input type="button" id="button" value="start"/>
+
+		<script language="javascript">
+		function initWorker() {
+			var result = document.querySelector('#result');
+			var button = document.querySelector('#button');
+			var worker = null;
+
+			button.onclick = function() {
+				if (worker == null) {
+					worker = new Worker('worker.js');
+					worker.onmessage = function(e) {
+						result.textContent = e.data;
+					};
+				}
+				result.textContent = '';
+				worker.postMessage(button.value);
+
+				if (button.value == 'start') {
+					button.value = 'stop';
+				} else {
+					button.value = 'start';
+					worker = null;
+				}
+			};
+		}
+		document.addEventListener("DOMContentLoaded", initWorker);
+		</script>
+	</body>
+</html>
