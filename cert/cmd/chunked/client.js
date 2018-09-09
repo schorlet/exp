@@ -10,7 +10,7 @@ fetch('/')
 			if (chunk.done) {
 				return;
 			}
-			var data = decoder.decode(chunk.value);
+			var data = decoder.decode(chunk.value, {stream: true});
 			console.log(data);
 			return pump();
 		})
@@ -44,11 +44,14 @@ race(fetch('/'), 2000)
 			if (chunk.done) {
 				return;
 			}
-			var data = decoder.decode(chunk.value);
+			const data = decoder.decode(chunk.value, {stream: true});
 			console.log(data);
 			return pump();
 		})
-		.catch(err => console.error(err));
+		.catch(err => {
+			reader.cancel();
+			console.error(err)
+		});
 	};
 	return pump();
 })
