@@ -15,13 +15,15 @@ import (
 // NewAppHandler exposes services through a HTTP handler.
 func NewAppHandler(todos gtimer.TodoService) http.Handler {
 	mux := http.NewServeMux()
-	mux.Handle("/", statsHandler("app", handleIndex("Hello %s\n")))
+
+	mux.Handle("/", handleIndex())
+	mux.Handle("/about", statsHandler("about", handleAbout("Hello %s\n")))
 
 	handler := TodoHandler(todos)
 	handler = statsHandler("api/todos", handler)
 	mux.Handle("/api/todos/", http.StripPrefix("/api/todos/", handler))
 
-	mux.Handle("/debug/vars", expvar.Handler())
+	mux.Handle("/debug/vars", basicAuth(expvar.Handler()))
 
 	mux.HandleFunc("/favicon.ico", http.NotFound)
 	mux.HandleFunc("/favicon.png", http.NotFound)
@@ -30,7 +32,14 @@ func NewAppHandler(todos gtimer.TodoService) http.Handler {
 	return mux
 }
 
-func handleIndex(format string) http.HandlerFunc {
+func handleIndex() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		name := "./vuejs" + r.URL.Path
+		http.ServeFile(w, r, name)
+	}
+}
+
+func handleAbout(format string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rand.Seed(time.Now().UnixNano())
 		if rand.Int()%2 == 0 {
@@ -55,7 +64,21 @@ func notAllowed(allowed ...string) http.HandlerFunc {
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
 		} else {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
 	}
+}
+
+func basicAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			username, password, ok := r.BasicAuth()
+			if !ok || username != "basic" || password != "basic" {
+				w.Header().Set("WWW-Authenticate", `Basic realm="Authorization Required"`)
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+			next.ServeHTTP(w, r)
+		},
+	)
 }
