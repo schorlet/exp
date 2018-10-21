@@ -1,10 +1,9 @@
 <template>
-	<section
+	<div
 			class="todo-list"
 			v-show="todos.length"
 	>
-		<article
-			is="todo-item"
+		<todo-item
 			v-for="(todo, index) in todos"
 				:todo="todo"
 				:key="todo.id"
@@ -13,7 +12,7 @@
 			@update="onUpdate"
 			@remove="onRemove"
 		></todo-item>
-	</section>
+	</div>
 </template>
 
 <script>
@@ -43,8 +42,8 @@ module.exports = {
 </script>
 
 <style scoped>
-	.todo-list article {
+	.todo-list {
 		margin: 6px;
-		border: 1px solid orange;
+		border: 1px solid #8d600d; /*orange*/
 	}
 </style>

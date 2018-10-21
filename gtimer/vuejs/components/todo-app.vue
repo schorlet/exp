@@ -6,13 +6,14 @@
 			></todo-input>
 		</header>
 
-		<section
-			is="todo-list"
-			:todos="todos"
-			@toggle="onToggle"
-			@update="onUpdate"
-			@remove="onRemove"
-		></section>
+		<section>
+			<todo-list
+				:todos="todos"
+				@toggle="onToggle"
+				@update="onUpdate"
+				@remove="onRemove"
+			></todo-list>
+		</section>
 
 		<footer>
 			{{todos}}
@@ -85,16 +86,17 @@ module.exports = {
 
 	.todoapp {
 		margin: 30px 6px;
-		border: 1px solid green;
+		border: 1px solid #0d9d0d; /*green*/
 	}
 
-	.todoapp header,section,footer {
+	header,section,footer {
 		margin: 6px;
-		border: 1px solid yellow;
+		border: 1px solid #8d8d0d; /*yellow*/
 	}
-	.todoapp footer {
+	footer {
 		line-height: 1.1em;
 		white-space: pre;
+		font-family: monospace;
 		font-size: 12px;
 	}
 </style>

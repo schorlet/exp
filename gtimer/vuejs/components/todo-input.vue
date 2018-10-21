@@ -30,15 +30,25 @@ module.exports = {
 </script>
 
 <style scoped>
-	input {
-		padding: 6px;
+	form {
+		display: flex;
+		align-items: center;
 		margin: 6px;
-		border: 1px solid #ccc;
-		font-size: 24px;
-		line-height: 1.4em;
+		border: 1px solid #8d600d; /*orange*/
+	}
+	input ,input:active, input:focus {
+		margin: 6px;
+		padding: 6px;
+		border: 1px solid #8d0d8d; /*magenta*/
+		font-size: inherit;
+		line-height: inherit;
 	}
 
+	input[type=submit] {
+		font-family: monospace;
+	}
 	input[name=title] {
-		width: 80%;
+		width: 100%;
+		flex 1 1 auto;
 	}
 </style>
