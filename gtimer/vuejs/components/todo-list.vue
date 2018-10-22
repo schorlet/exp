@@ -43,7 +43,7 @@ module.exports = {
 
 <style scoped>
 	.todo-list {
-		margin: 6px;
-		border: 1px solid #8d600d; /*orange*/
+		// margin: 6px;
+		border: 1px solid #8d600d00; /*orange*/
 	}
 </style>

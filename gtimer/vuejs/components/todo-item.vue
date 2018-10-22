@@ -3,37 +3,47 @@
 		class="todo-item"
 		:class="{completed: todo.completed, editing: this.editing}"
 	>
-		<div class="view">
-			<input
-				type="button"
-				class="toggle"
-				value="&sext;"
-				@click="onToggle"
-			/>
+		<span
+			class="toggle"
+			title="toggle"
+			@click="onToggle"
+		>
+			&check;
+		</span>
 
-			<div class="view-label">
+		<div class="editable">
+			<div class="editable-label">
 				<label
 					@dblclick="onEditStart"
 				>
-					{{todo.title}}
+					<span>{{todo.title}}</span>
 				</label>
 
 				<input
 					type="button"
-					class="destroy"
-					value="&Cross;"
-					@click="onRemove"
+					class="editable-button"
+					value="&odot;"
+					title="edit"
+					@click="onEditStart"
 				/>
 			</div>
+
+			<input
+				type="text"
+				class="editable-input"
+				:value="todo.title"
+				@blur="onEditUpdate"
+				@keyup.enter="onEditUpdate"
+				@keyup.esc="onEditUndo"
+			/>
 		</div>
 
 		<input
-			type="text"
-			class="edit"
-			:value="todo.title"
-			@blur="onEditUpdate"
-			@keyup.enter="onEditUpdate"
-			@keyup.esc="onEditUndo"
+			type="button"
+			value="&cross;"
+			class="destroy"
+			title="delete"
+			@click="onRemove"
 		/>
 	</article>
 </template>
@@ -54,7 +64,7 @@ module.exports = {
 	},
 	updated: function () {
 		if (this.editing) {
-			this.$el.querySelector('.edit').focus();
+			this.$el.querySelector('.editable-input').focus();
 		}
 	},
 	methods: {
@@ -87,59 +97,110 @@ module.exports = {
 	.todo-item {
 		display: flex;
 		align-items: center;
-		margin: 6px;
-		border: 1px solid #8d0d0d;
+		// margin: 6px;
+		border: 1px solid #8d0d0d00; /*red*/
+		border-bottom: 1px solid #8d0d0d; /*red*/
+		padding: 0px 0px 6px 6px;
 	}
 
 	/* input,label */
-	input, label {
-		margin: 6px;
+	input, label, span {
+		margin: 6px 6px 0px 0px;
 		padding: 6px;
-		border: 1px solid #8d0d8d; /*magenta*/
 		font-size: inherit;
 		line-height: inherit;
 	}
-	input[type=text],label {
-		width: 100%;
-		flex 1 1 auto;
+	input {
+		border: 1px solid #8d0d8d; /*magenta*/
 	}
-	input[type=button] {
+	span, input[type=button] {
 		font-family: monospace;
 	}
 
 	/* .editing */
-	.edit {
+	.editable {
+		display: flex;
+		align-items: center;
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+	.editable-input {
 		display: none;
 	}
-	.view {
-		display: flex;
-		width: 100%;
+	.editing .editable-input {
+		display: inline-block;
+		outline: none;
+		flex: 1 1 auto;
+		min-width: 0;
 	}
-	.editing .edit {
-		display: block;
-	}
-	.editing .view {
+	.editing .editable-label {
 		display: none;
 	}
 
-	/* .completed */
+	/* .editable-label */
+	.editable-label {
+		display: flex;
+		align-items: center;
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+	.editable-label label {
+		border: 1px solid #8d0d8d00; /*magenta*/
+		flex: 1 1 auto;
+		min-width: 0;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.editable-label:hover label {
+		border: 1px solid #8d0d8d; /*magenta*/
+		margin: 6px 0px 0px 0px;
+	}
+
+	/* .editable-button */
+	.editable-button {
+		display: none;
+		vertical-align: baseline;
+		text-align: center;
+		border: 1px solid #8d0d8d; /*magenta*/
+	}
+	.editable-label:hover .editable-button {
+		display: inline-block;
+		border-left: 0px;
+	}
+
+
+	/* .toggle, .completed */
+	.toggle {
+		border: 1px solid #8d600d; /*orange*/
+		// border-radius: 50%;
+		vertical-align: baseline;
+		text-align: center;
+		width: 0.5em;
+		height: 0.5em;
+		line-height: 0.5em;
+		color: #0d9d0d00; /*green*/
+		cursor: default;
+	}
+	// .toggle:hover {
+		// color: inherit;
+	// }
+	.completed .toggle {
+		color: #0d9d0d; /*green*/
+	}
 	.completed label {
 		text-decoration: line-through;
 	}
-	.completed .toggle {
-		color: #8d600d; /*orange*/
-	}
 
 	/* .destroy */
-	.view-label {
-		display: flex;
-		width: 100%;
-	}
 	.destroy {
-		display: none;
+		// border: 1px solid #8d600d; /*orange*/
+		border: 0px;
+		vertical-align: baseline;
+		text-align: center;
+		cursor: pointer;
 	}
-	.view-label:hover .destroy {
-		color: #8d600d; /*orange*/
-		display: block;
+	.todo-item:hover .destroy {
+		color: #8d0d0d; /*red*/
 	}
 </style>

@@ -33,8 +33,8 @@ module.exports = {
 			debug: true,
 			todos: [
 				{id: '1', title:'text 1'},
-				{id: '2', title:'text 2'},
-				{id: '3', title:'text 3'}
+				{id: '2', title:''},
+				{id: '3', title:'text 3 is longer and should be ellipsed'}
 			],
 			count: 3
 		}
@@ -90,8 +90,8 @@ module.exports = {
 	}
 
 	header,section,footer {
-		margin: 6px;
-		border: 1px solid #8d8d0d; /*yellow*/
+		margin: 0px 6px;
+		border: 1px solid #8d8d0d00; /*yellow*/
 	}
 	footer {
 		line-height: 1.1em;
