@@ -2,7 +2,9 @@
 	<div class="todo-input">
 		<span
 			class="toggle"
+			:class="{toggled: this.toggled}"
 			title="toggle"
+			@click="onToggle"
 		>
 			&check;
 		</span>
@@ -26,10 +28,15 @@ module.exports = {
 	name: 'TodoInput',
 	data: function() {
 		return {
-			title: ''
+			title: '',
+			toggled: false,
 		}
 	},
 	methods: {
+		onToggle: function() {
+			this.toggled = !this.toggled;
+			this.$emit('toggle-all', this.toggled);
+		},
 		onSubmit: function() {
 			this.$emit('create', this.title);
 			this.title = '';
@@ -63,8 +70,11 @@ module.exports = {
 		color: #0d9d0d00; /*green*/
 		cursor: default;
 	}
-	.toggle:hover {
-		color: inherit;
+	// .toggle:hover {
+		// color: inherit;
+	// }
+	.toggled.toggle {
+		color: #0d9d0d; /*green*/
 	}
 
 	form {

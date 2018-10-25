@@ -75,11 +75,14 @@ module.exports = {
 			this.editing = true;
 		},
 		onEditUpdate: function(event) {
+			this.editing = false;
+			if (this.todo.title === event.target.value) {
+				return;
+			}
 			this.$emit('update', {
 				id: this.todo.id,
 				title: event.target.value
 			});
-			this.editing = false;
 		},
 		onEditUndo: function() {
 			document.execCommand('undo');

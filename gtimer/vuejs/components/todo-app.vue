@@ -3,6 +3,7 @@
 		<header>
 			<todo-input
 				@create="onCreate"
+				@toggle-all="onToggleAll"
 			></todo-input>
 		</header>
 
@@ -59,6 +60,12 @@ module.exports = {
 				const completed = todo.completed || false;
 				this.$set(todo, 'completed', !completed);
 			}
+		},
+		onToggleAll: function(state) {
+			this.log(`onToggleAll: state:${state}`);
+			this.todos.forEach(todo => {
+				this.$set(todo, 'completed', state);
+			});
 		},
 		onUpdate: function(updated) {
 			this.log(`onUpdate: id:${updated.id}, title:${updated.title}`);
