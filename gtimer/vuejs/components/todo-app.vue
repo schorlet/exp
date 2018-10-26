@@ -33,7 +33,7 @@ module.exports = {
 		return {
 			debug: true,
 			todos: [
-				{id: '1', title:'text 1'},
+				{id: '1', title:'text 1', completed: true},
 				{id: '2', title:''},
 				{id: '3', title:'text 3 is longer and should be ellipsed'}
 			],

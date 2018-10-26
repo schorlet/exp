@@ -113,9 +113,6 @@ module.exports = {
 		font-size: inherit;
 		line-height: inherit;
 	}
-	input {
-		border: 1px solid #8d0d8d; /*magenta*/
-	}
 	span, input[type=button] {
 		font-family: monospace;
 	}
@@ -129,12 +126,13 @@ module.exports = {
 	}
 	.editable-input {
 		display: none;
-	}
-	.editing .editable-input {
-		display: inline-block;
+		border: 1px solid #333; /*magenta*/
 		outline: none;
 		flex: 1 1 auto;
 		min-width: 0;
+	}
+	.editing .editable-input {
+		display: inline-block;
 	}
 	.editing .editable-label {
 		display: none;
@@ -156,7 +154,7 @@ module.exports = {
 		text-overflow: ellipsis;
 	}
 	.editable-label:hover label {
-		border: 1px solid #8d0d8d; /*magenta*/
+		border: 1px solid #333; /*magenta*/
 		margin: 6px 0px 0px 0px;
 	}
 
@@ -165,7 +163,7 @@ module.exports = {
 		display: none;
 		vertical-align: baseline;
 		text-align: center;
-		border: 1px solid #8d0d8d; /*magenta*/
+		border: 1px solid #333; /*magenta*/
 	}
 	.editable-label:hover .editable-button {
 		display: inline-block;
