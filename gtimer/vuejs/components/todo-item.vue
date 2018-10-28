@@ -1,7 +1,13 @@
 <template>
 	<article
 		class="todo-item"
-		:class="{completed: todo.completed, editing: this.editing}"
+		:class="{completed: todo.completed, editing: editing, dragover: dragover}"
+		:draggable="!editing"
+		@dragstart="onDragstart"
+		@dragend="onDragend"
+		@dragover="onDragover"
+		@dragleave="onDragleave"
+		@drop.prevent="onDrop"
 	>
 		<span
 			class="toggle"
@@ -64,6 +70,8 @@ module.exports = {
 	data: function() {
 		return {
 			editing: false,
+			dragging: false,
+			dragover: false
 		}
 	},
 	updated: function () {
@@ -72,6 +80,36 @@ module.exports = {
 		}
 	},
 	methods: {
+		// drag source
+		onDragstart: function(e) {
+			e.dataTransfer.setData('text/plain', this.todo.id);
+			this.dragging = true;
+		},
+		onDragend: function() {
+			this.dragging = false;
+		},
+		// drag target
+		onDragover: function(e) {
+			if (this.dragging) {
+				e.dropEffect = 'none';
+			} else {
+				this.dragover = true;
+				e.dropEffect = 'move';
+				e.preventDefault();
+			}
+		},
+		onDragleave: function() {
+			this.dragover = false;
+		},
+		onDrop: function(e) {
+			const data = e.dataTransfer.getData("text/plain");
+			this.dragover = false;
+			this.$emit('drop', {
+				from: data,
+				to: this.todo.id
+			});
+		},
+		// highlight
 		highlighted: function() {
 			if (!this.highlight) {
 				return this.todo.title;
@@ -80,14 +118,15 @@ module.exports = {
 				return this.todo.title.replace(
 					new RegExp(`(${this.highlight})`, 'ig'),
 					'<span class="highlight">$1</span>');
-			} catch(e) {
-				console.error(e);
+			} catch {
 				return this.todo.title;
 			}
 		},
+		// toggle
 		onToggle: function() {
 			this.$emit('toggle', this.todo.id);
 		},
+		// edit
 		onEditStart: function(event) {
 			this.editing = true;
 		},
@@ -105,6 +144,7 @@ module.exports = {
 			document.execCommand('undo');
 			this.editing = false;
 		},
+		// remove
 		onRemove: function() {
 			this.$emit('remove', this.todo.id);
 			this.editing = false;
@@ -121,6 +161,9 @@ module.exports = {
 		border: 1px solid #8d0d0d00; /*red*/
 		border-bottom: 1px solid #8d0d0d; /*red*/
 		padding: 0px 0px 6px 6px;
+	}
+	.dragover {
+		border: 1px dashed #8d0d0d; /*red*/
 	}
 
 	/* input,label */

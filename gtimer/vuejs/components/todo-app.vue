@@ -14,6 +14,7 @@
 				@toggle="onToggle"
 				@update="onUpdate"
 				@remove="onRemove"
+				@drop="onDrop"
 				:highlight="highlight"
 			></todo-list>
 		</section>
@@ -51,7 +52,7 @@ module.exports = {
 			this.log(`onCreate: title:${title}`);
 			this.count++;
 			this.todos.push({
-				id: this.count,
+				id: this.count.toString(),
 				title: title
 			});
 		},
@@ -83,6 +84,15 @@ module.exports = {
 			const index = this.todos.findIndex(item => item.id === id);
 			if (index >= 0) {
 				this.todos.splice(index, 1);
+			}
+		},
+		onDrop: function(drop) {
+			this.log(`onDrop: from:${drop.from} to:${drop.to}`);
+			const ifrom = this.todos.findIndex(item => item.id === drop.from);
+			const ito = this.todos.findIndex(item => item.id === drop.to);
+			if (ifrom >= 0 && ito >= 0) {
+				const tfrom = this.todos.splice(ifrom, 1);
+				this.todos.splice(ito, 0, tfrom[0]);
 			}
 		},
 	}

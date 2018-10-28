@@ -12,6 +12,7 @@
 			@update="onUpdate"
 			@remove="onRemove"
 			:highlight="highlight"
+			@drop="onDrop"
 		></todo-item>
 
 		<div class="filters">
@@ -50,13 +51,14 @@ module.exports = {
 		}
 	},
 	created: function() {
-		window.addEventListener('hashchange',this.onHashchange);
-		this.filter = window.location.hash.split("#/")[1] ;
+		window.addEventListener('hashchange', this.onHashchange);
+		this.filter = window.location.hash.split("#/")[1];
 	},
 	beforeDestroy: function() {
 		window.removeEventListener('hashchange', this.onHashchange);
 	},
 	methods: {
+		// raise events
 		onToggle: function(id) {
 			this.$emit('toggle', id);
 		},
@@ -66,6 +68,10 @@ module.exports = {
 		onRemove: function(id) {
 			this.$emit('remove', id);
 		},
+		onDrop: function(drop) {
+			this.$emit('drop', drop);
+		},
+		// hashchange
 		onHashchange: function (todos) {
 			this.filter = window.location.hash.split("#/")[1];
 		},
