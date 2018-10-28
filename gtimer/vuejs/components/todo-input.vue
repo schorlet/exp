@@ -15,7 +15,8 @@
 				autocomplete="off"
 				placeholder="What needs to be done ?"
 				name="title"
-				v-model="title"
+				:value="title"
+				@input="onInput"
 			/>
 			<input type="submit"
 				title="create" value="&crarr;"/>
@@ -26,6 +27,16 @@
 <script>
 module.exports = {
 	name: 'TodoInput',
+	model: {
+		prop: 'highlight',
+		event: 'highlight'
+	},
+	props: {
+		highlight: {
+			type: String,
+			default: ''
+		}
+	},
 	data: function() {
 		return {
 			title: '',
@@ -37,9 +48,14 @@ module.exports = {
 			this.toggled = !this.toggled;
 			this.$emit('toggle-all', this.toggled);
 		},
+		onInput: function(event) {
+			this.title = event.target.value;
+			this.$emit('highlight', this.title);
+		},
 		onSubmit: function() {
 			this.$emit('create', this.title);
 			this.title = '';
+			this.$emit('highlight', this.title);
 			this.$el.querySelector('input[name=title]').focus();
 		}
 	}

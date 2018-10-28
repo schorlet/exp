@@ -16,7 +16,7 @@
 				<label
 					@dblclick="onEditStart"
 				>
-					<span>{{todo.title}}</span>
+					<span v-html="highlighted()"></span>
 				</label>
 
 				<input
@@ -55,6 +55,10 @@ module.exports = {
 		todo: {
 			type: Object,
 			required: true
+		},
+		highlight: {
+			type: String,
+			default: ''
 		}
 	},
 	data: function() {
@@ -68,6 +72,19 @@ module.exports = {
 		}
 	},
 	methods: {
+		highlighted: function() {
+			if (!this.highlight) {
+				return this.todo.title;
+            }
+            try {
+				return this.todo.title.replace(
+					new RegExp(`(${this.highlight})`, 'ig'),
+					'<span class="highlight">$1</span>');
+			} catch(e) {
+				console.error(e);
+				return this.todo.title;
+			}
+		},
 		onToggle: function() {
 			this.$emit('toggle', this.todo.id);
 		},
@@ -115,6 +132,13 @@ module.exports = {
 	}
 	span, input[type=button] {
 		font-family: monospace;
+	}
+
+	.highlight {
+		background-color: #8d8d0d; /*yellow*/
+		color: #1f2023; /*background*/
+		margin: 0px;
+		padding: 0px;
 	}
 
 	/* .editing */

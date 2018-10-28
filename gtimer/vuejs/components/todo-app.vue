@@ -4,6 +4,7 @@
 			<todo-input
 				@create="onCreate"
 				@toggle-all="onToggleAll"
+				v-model="highlight"
 			></todo-input>
 		</header>
 
@@ -13,6 +14,7 @@
 				@toggle="onToggle"
 				@update="onUpdate"
 				@remove="onRemove"
+				:highlight="highlight"
 			></todo-list>
 		</section>
 
@@ -37,7 +39,8 @@ module.exports = {
 				{id: '2', title:''},
 				{id: '3', title:'text 3 is longer and should be ellipsed'}
 			],
-			count: 3
+			count: 3,
+			highlight: ''
 		}
 	},
 	methods: {

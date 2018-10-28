@@ -11,6 +11,7 @@
 			@toggle="onToggle"
 			@update="onUpdate"
 			@remove="onRemove"
+			:highlight="highlight"
 		></todo-item>
 
 		<div class="filters">
@@ -37,6 +38,10 @@ module.exports = {
 		todos: {
 			type: Array,
 			required: true
+		},
+		highlight: {
+			type: String,
+			default: ''
 		}
 	},
 	data: function() {
