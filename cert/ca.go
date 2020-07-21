@@ -37,7 +37,7 @@ func CreateCACert(cn string) error {
 		},
 		NotBefore: time.Now(),
 		NotAfter:  time.Now().Add(24 * time.Hour),
-		KeyUsage:  x509.KeyUsageCertSign,
+		KeyUsage:  x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
 	}
 
 	der, err := x509.CreateCertificate(

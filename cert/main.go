@@ -73,7 +73,7 @@ func HelloHandler(world string) http.HandlerFunc {
 		log.Printf("%s", dump)
 
 		who := world
-		if len(r.TLS.PeerCertificates) > 0 {
+		if r.TLS != nil && len(r.TLS.PeerCertificates) > 0 {
 			if len(r.TLS.PeerCertificates[0].EmailAddresses) > 0 {
 				who = r.TLS.PeerCertificates[0].EmailAddresses[0]
 			}

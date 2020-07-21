@@ -38,7 +38,7 @@ func CreateServerCert(ca, server string) error {
 		},
 		NotBefore:   time.Now(),
 		NotAfter:    time.Now().Add(24 * time.Hour),
-		KeyUsage:    x509.KeyUsageKeyAgreement | x509.KeyUsageKeyEncipherment,
+		KeyUsage:    x509.KeyUsageKeyAgreement | x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		//
 		DNSNames:    []string{server},
