@@ -1,4 +1,4 @@
-package main
+package cert
 
 import (
 	"crypto/rand"
@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 )
 
-func ReadKey(cn, password string) (*rsa.PrivateKey, error) {
-	path := filepath.Join(*pkiPath, cn+".key")
+func ReadKey(pkiPath, cn, password string) (*rsa.PrivateKey, error) {
+	path := filepath.Join(pkiPath, cn+".key")
 	log.Printf("reading %q key from %q\n", cn, path)
 
 	data, err := ioutil.ReadFile(path)
@@ -46,13 +46,13 @@ func ReadKey(cn, password string) (*rsa.PrivateKey, error) {
 	return key, nil
 }
 
-func SaveKey(cn, password string, key *rsa.PrivateKey) error {
+func SaveKey(pkiPath, cn, password string, key *rsa.PrivateKey) error {
 	block := pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(key),
 	}
 	if password == "" {
-		return SaveKeyBlock(cn, &block)
+		return SaveKeyBlock(pkiPath, cn, &block)
 	}
 
 	encryptedBlock, err := x509.EncryptPEMBlock(
@@ -66,11 +66,11 @@ func SaveKey(cn, password string, key *rsa.PrivateKey) error {
 		return fmt.Errorf("encrypt key: %v", err)
 	}
 
-	return SaveKeyBlock(cn, encryptedBlock)
+	return SaveKeyBlock(pkiPath, cn, encryptedBlock)
 }
 
-func SaveKeyBlock(cn string, block *pem.Block) error {
-	path := filepath.Join(*pkiPath, cn+".key")
+func SaveKeyBlock(pkiPath, cn string, block *pem.Block) error {
+	path := filepath.Join(pkiPath, cn+".key")
 	log.Printf("writing %q key to %q\n", cn, path)
 
 	// O_EXCL: file must not exist

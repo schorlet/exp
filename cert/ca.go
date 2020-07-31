@@ -1,4 +1,4 @@
-package main
+package cert
 
 import (
 	"crypto/rand"
@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-func CreateCACert(cn string) error {
+func CreateCACert(pkiPath, cn string, validity time.Duration) error {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return fmt.Errorf("generate key: %v", err)
@@ -36,7 +36,7 @@ func CreateCACert(cn string) error {
 			Country:      []string{"EU"},
 		},
 		NotBefore: time.Now(),
-		NotAfter:  time.Now().Add(24 * time.Hour),
+		NotAfter:  time.Now().Add(validity),
 		KeyUsage:  x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
 	}
 
@@ -52,12 +52,12 @@ func CreateCACert(cn string) error {
 	}
 	block := pem.Block{Type: "CERTIFICATE", Bytes: der}
 
-	err = SaveKey(cn, cn, key)
+	err = SaveKey(pkiPath, cn, cn, key)
 	if err != nil {
 		return fmt.Errorf("save key: %v", err)
 	}
 
-	err = SaveCertBlock(cn, &block)
+	err = SaveCertBlock(pkiPath, cn, &block)
 	if err != nil {
 		return fmt.Errorf("save cert: %v", err)
 	}
@@ -65,8 +65,8 @@ func CreateCACert(cn string) error {
 	return nil
 }
 
-func SaveCertBlock(cn string, block *pem.Block) error {
-	path := filepath.Join(*pkiPath, cn+".crt")
+func SaveCertBlock(pkiPath, cn string, block *pem.Block) error {
+	path := filepath.Join(pkiPath, cn+".crt")
 	log.Printf("writing %q certificate to %q\n", cn, path)
 
 	file, err := os.Create(path)

@@ -1,4 +1,4 @@
-package main
+package cert
 
 import (
 	"crypto/tls"
@@ -12,13 +12,13 @@ import (
 	"time"
 )
 
-func ReadTLSCert(cn, password string) (tls.Certificate, error) {
-	key, err := ReadKey(cn, password)
+func ReadTLSCert(pkiPath, cn, password string) (tls.Certificate, error) {
+	key, err := ReadKey(pkiPath, cn, password)
 	if err != nil {
 		return tls.Certificate{}, fmt.Errorf("read key: %v", err)
 	}
 
-	path := filepath.Join(*pkiPath, cn+".crt")
+	path := filepath.Join(pkiPath, cn+".crt")
 	log.Printf("reading %q certificate from %q\n", cn, path)
 
 	data, err := ioutil.ReadFile(path)
@@ -47,13 +47,13 @@ func ReadTLSCert(cn, password string) (tls.Certificate, error) {
 	}, nil
 }
 
-func NewTLSConfig(ca, server string) (*tls.Config, error) {
-	clientCAs, err := NewCertPool(ca, false)
+func NewTLSConfig(pkiPath, ca, server string) (*tls.Config, error) {
+	clientCAs, err := NewCertPool(pkiPath, ca, false)
 	if err != nil {
 		return nil, fmt.Errorf("create ca pool: %v", err)
 	}
 
-	tlsServer, err := ReadTLSCert(server, "")
+	tlsServer, err := ReadTLSCert(pkiPath, server, "")
 	if err != nil {
 		return nil, fmt.Errorf("read server cert: %v", err)
 	}
@@ -86,13 +86,13 @@ func NewTLSConfig(ca, server string) (*tls.Config, error) {
 	}, nil
 }
 
-func NewTLSClient(ca, client string) (*http.Client, error) {
-	rootCAs, err := NewCertPool(ca, true)
+func NewTLSClient(pkiPath, ca, client string) (*http.Client, error) {
+	rootCAs, err := NewCertPool(pkiPath, ca, true)
 	if err != nil {
 		return nil, fmt.Errorf("create ca pool: %v", err)
 	}
 
-	tlsClient, err := ReadTLSCert(client, "")
+	tlsClient, err := ReadTLSCert(pkiPath, client, "")
 	if err != nil {
 		return nil, fmt.Errorf("read server cert: %v", err)
 	}
@@ -115,8 +115,8 @@ func NewTLSClient(ca, client string) (*http.Client, error) {
 	}, nil
 }
 
-func NewCertPool(ca string, system bool) (*x509.CertPool, error) {
-	path := filepath.Join(*pkiPath, ca+".crt")
+func NewCertPool(pkiPath, ca string, system bool) (*x509.CertPool, error) {
+	path := filepath.Join(pkiPath, ca+".crt")
 	log.Printf("reading %q certificate from %q\n", ca, path)
 
 	data, err := ioutil.ReadFile(path)
@@ -139,8 +139,8 @@ func NewCertPool(ca string, system bool) (*x509.CertPool, error) {
 	return pool, nil
 }
 
-func NewTLSServer(ca, server, addr string, handler http.Handler) (*http.Server, error) {
-	tlsConfig, err := NewTLSConfig(ca, server)
+func NewTLSServer(pkiPath, ca, server, addr string, handler http.Handler) (*http.Server, error) {
+	tlsConfig, err := NewTLSConfig(pkiPath, ca, server)
 	if err != nil {
 		return nil, fmt.Errorf("create tls config: %v", err)
 	}

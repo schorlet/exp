@@ -1,80 +1,65 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/github"
+	"github.com/schorlet/exp/presence/session"
+	oauth "github.com/schorlet/exp/presence/slack"
+	// oauth "github.com/schorlet/exp/presence/github"
 )
 
-var (
-	// 3-legged OAuth2 flow
-	conf = oauth2.Config{
-		ClientID:     os.Getenv("GITHUB_CLIENT_ID"),
-		ClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
-		RedirectURL:  "http://127.0.0.1:8000/callback",
-		Scopes:       []string{"user:email"},
-		Endpoint:     github.Endpoint,
-	}
-)
+const indexPage = `<html>
+	<body>Logged as %q (%s) <a href="/logout">Log out</a></body>
+</html>`
 
 const loginPage = `<html>
 	<body>Log in with <a href="/login">GitHub</a></body>
 </html>`
 
-const indexPage = `<html>
-	<body>Logged as %q <a href="/logout">Log out</a></body>
-</html>`
-
-// index
 func index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	session, ok := getSession(r)
+	sess, ok := session.Get(r)
 	if ok {
-		fmt.Fprintf(w, indexPage, session.Login)
+		fmt.Fprintf(w, indexPage, sess.User.Name, sess.User.ID)
 		return
 	}
 	fmt.Fprintf(w, loginPage)
 }
 
-// login
 func login(w http.ResponseWriter, r *http.Request) {
-	session, ok := getSession(r)
+	sess, ok := session.Get(r)
 	if ok {
+		log.Println("login: user already logged")
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
-	session.setCookie(w)
 
-	url := conf.AuthCodeURL(session.state, oauth2.AccessTypeOnline)
-	fmt.Printf("login: url: %s\n", url)
+	sess.SetCookie(w)
+	url := oauth.LoginURL(sess.State)
+
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
-// logout
 func logout(w http.ResponseWriter, r *http.Request) {
-	session, _ := getSession(r)
-	session.clear(w)
+	session.Clear(w, r, "user logout")
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
-// callback
 func callback(w http.ResponseWriter, r *http.Request) {
-	session, ok := getSession(r)
+	sess, ok := session.Get(r)
+	fmt.Printf("callback session: %+v\n", sess)
 	if ok {
-		log.Printf("callback: user already logged\n")
+		log.Println("callback: user already logged")
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 
 	state := r.FormValue("state")
-	if state != session.state {
-		log.Printf("callback: invalid state: %q\n", state)
-		session.clear(w)
+	if state != sess.State {
+		session.Clear(w, r, fmt.Sprintf(
+			"callback: invalid state: %q, expected: %q\n", state, sess.State))
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
@@ -83,29 +68,29 @@ func callback(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	fmt.Printf("callback: code: %q\n", code)
 
-	ctx := context.Background()
-	token, err := conf.Exchange(ctx, code)
+	token, err := oauth.Exchange(code)
 	if err != nil {
-		log.Printf("callback: exchange failed: %v\n", err)
-		session.clear(w)
+		session.Clear(w, r, fmt.Sprintf("callback: exchange failed: %v\n", err))
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 	fmt.Printf("callback: token: %+v\n", token)
 
-	if err = session.fetchUser(token); err != nil {
-		log.Printf("callback: fetch user failed: %v\n", err)
-		session.clear(w)
+	user, err := oauth.GetUser(token)
+	if err != nil {
+		session.Clear(w, r, fmt.Sprintf("callback: getUser failed: %v\n", err))
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
+	sess.SetUser(session.User{
+		ID:   user.ID,
+		Name: user.Name,
+	})
+
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
-// main
 func main() {
-	fmt.Printf("main: conf: %+v\n", conf)
-
 	http.HandleFunc("/", index)
 	http.HandleFunc("/login", login)
 	http.HandleFunc("/logout", logout)

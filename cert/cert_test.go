@@ -1,22 +1,30 @@
-package main
+package cert
 
 import (
 	"crypto/tls"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path"
 	"testing"
+	"time"
+)
+
+var (
+	pkiPath  = path.Dir(os.Args[0])
+	validity = 1 * time.Minute
 )
 
 func init() {
-	prepare()
-	*pkiPath = path.Dir(os.Args[0])
+	log.SetFlags(log.Lshortfile)
+	// log.SetOutput(os.Stderr)
+	log.SetOutput(ioutil.Discard)
 
-	err := CreateCerts("ca", "localhost", "client")
+	err := CreateCerts(pkiPath, "ca", "localhost", "client", validity)
 	if err != nil {
-		stderr.Fatalf("create certs: %v", err)
+		log.Fatalf("create certs: %v", err)
 	}
 }
 
@@ -24,9 +32,9 @@ func withServer(fn func(string)) {
 	server := httptest.NewUnstartedServer(HelloHandler("world"))
 	defer server.Close()
 
-	tlsConfig, err := NewTLSConfig("ca", "localhost")
+	tlsConfig, err := NewTLSConfig(pkiPath, "ca", "localhost")
 	if err != nil {
-		stderr.Fatalf("create tls config: %v", err)
+		log.Fatalf("create tls config: %v", err)
 	}
 
 	server.TLS = tlsConfig
@@ -37,7 +45,7 @@ func withServer(fn func(string)) {
 
 func TestClientAuth(t *testing.T) {
 	withServer(func(url string) {
-		client, err := NewTLSClient("ca", "client")
+		client, err := NewTLSClient(pkiPath, "ca", "client")
 		if err != nil {
 			t.Fatalf("create client: %v", err)
 		}
@@ -62,7 +70,7 @@ func TestClientAuth(t *testing.T) {
 
 func TestClientNoAuth(t *testing.T) {
 	withServer(func(url string) {
-		client, err := NewTLSClient("ca", "client")
+		client, err := NewTLSClient(pkiPath, "ca", "client")
 		if err != nil {
 			t.Fatalf("create client: %v", err)
 		}

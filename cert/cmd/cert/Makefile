@@ -1,3 +1,5 @@
+APP ?= cert
+
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 
@@ -5,10 +7,11 @@ GOARCH ?= $(shell go env GOARCH)
 # -gcflags "-N -l"
 
 ## default: build the application
-$(APP)-$(GOOS)-$(GOARCH): $(wildcard *.go **/*.go)
+$(APP)-$(GOOS)-$(GOARCH): $(wildcard *.go)
 	goimports -l -w .
-	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go install \
-	-v -trimpath
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build \
+	-v -trimpath \
+	-o $(APP)-$(GOOS)-$(GOARCH)
 
 .PHONY: clean
 ## clean: clean generated files
@@ -24,11 +27,33 @@ lint: $(APP)-$(GOOS)-$(GOARCH)
 	golangci-lint run .
 
 
+.PHONY: run
+## run: run the cert command
+run: $(APP)-$(GOOS)-$(GOARCH)
+	./$(APP)-$(GOOS)-$(GOARCH) -v -validity 720h
+
+.PHONY: debug-compile
+## debug-compile: compile without optimisation
+debug-compile:
+	goimports -l -w .
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build \
+	-gcflags "-N -l" \
+	-v \
+	-o $(APP)-$(GOOS)-$(GOARCH)
+
+.PHONY: attach
+## attach: debug the server
+attach:
+# 	dlv debug github.com/schorlet/exp/cert
+# 	dlv exec ./$(APP)-$(GOOS)-$(GOARCH)
+	dlv attach $(shell pgrep $(APP)-$(GOOS)-$(GOARCH))
+
+
 .PHONY: test
 ## test: run test
 test: $(APP)-$(GOOS)-$(GOARCH)
 	goimports -l -w .
-	go test -v .
+	go test -v ./...
 
 ## cover.out: test coverage
 cover.out: $(APP)-$(GOOS)-$(GOARCH)

@@ -1,4 +1,4 @@
-package main
+package cert
 
 import (
 	"crypto/rand"
@@ -13,8 +13,8 @@ import (
 	"time"
 )
 
-func CreateServerCert(ca, server string) error {
-	tlsCA, err := ReadTLSCert(ca, ca)
+func CreateServerCert(pkiPath, ca, server string, validity time.Duration) error {
+	tlsCA, err := ReadTLSCert(pkiPath, ca, ca)
 	if err != nil {
 		return fmt.Errorf("read ca cert: %v", err)
 	}
@@ -37,7 +37,7 @@ func CreateServerCert(ca, server string) error {
 			Country:      []string{"EU"},
 		},
 		NotBefore:   time.Now(),
-		NotAfter:    time.Now().Add(24 * time.Hour),
+		NotAfter:    time.Now().Add(validity),
 		KeyUsage:    x509.KeyUsageKeyAgreement | x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		//
@@ -57,12 +57,12 @@ func CreateServerCert(ca, server string) error {
 	}
 	block := pem.Block{Type: "CERTIFICATE", Bytes: der}
 
-	err = SaveKey(server, "", key)
+	err = SaveKey(pkiPath, server, "", key)
 	if err != nil {
 		return fmt.Errorf("save key: %v", err)
 	}
 
-	err = SaveCertBlock(server, &block)
+	err = SaveCertBlock(pkiPath, server, &block)
 	if err != nil {
 		return fmt.Errorf("save cert: %v", err)
 	}
